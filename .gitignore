@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite local database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

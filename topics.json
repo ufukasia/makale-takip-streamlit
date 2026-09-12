@@ -1,0 +1,1953 @@
+{
+ "categories": [
+  {
+   "id": "nlp",
+   "no": "01",
+   "name": "Doğal Dil İşleme & LLM",
+   "short": "Sınıflandırma · NER · QA · PEFT",
+   "color": "#0073b4",
+   "blurb": "En hızlı deney döngüsü: veri Hugging Face’ten tek satırla iner, BERT sınıfı fine-tuning dakikalar–saatler sürer ve GLUE/CoNLL/SQuAD gibi benchmark’ların on yıllık referansları vardır. Türkçe tarafta TrGLUE ve Common Voice doğal özgünlük avantajı sağlar.",
+   "topics": [
+    {
+     "id": "nlp-1",
+     "code": "1.1",
+     "title": "Az Veriyle Çok Şey: SST-2’de LoRA ve Veri Artırmanın BERT Fine-Tuning’e Üstünlüğü",
+     "titleEn": "Parameter-Efficient Beating of Full Fine-Tuning on SST-2",
+     "dataset": {
+      "name": "GLUE SST-2",
+      "detail": "67.349 eğitim / 872 dev cümlesi · <100 MB · HF: nyu-mll/glue",
+      "url": "https://huggingface.co/datasets/nyu-mll/glue"
+     },
+     "baseline": {
+      "name": "BERT-base tam fine-tuning",
+      "code": "HF run_glue.py protokolü (3 epoch, batch 32, lr taraması)",
+      "result": "Dev doğruluk %92,7–93,5 (bağımsız reprodüksiyon: %93,23)"
+     },
+     "target": "Dev doğrulukta %93,5 üzeri",
+     "metric": "Accuracy (dev)",
+     "strategy": [
+      "Ajan veri setini indirir, run_glue.py ile baseline’ı koşar ve sonucu kaydeder",
+      "Öğrenme oranı / batch ızgarası taranır",
+      "LoRA/PEFT varyantı tam fine-tuning ile kıyaslanır",
+      "EDA ve back-translation ile veri artırma denenir",
+      "5 seed’li ensemble ile varyans düşürülür"
+     ],
+     "gpu": "Colab T4 yeterli",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · transformers/datasets",
+     "duration": "2–3 hafta",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "nlp-2",
+     "code": "1.2",
+     "title": "Türkçe Duygu Analizinde Orkestrasyon: BERTurk’un TrSST-2 ve Ürün Yorumlarında Aşılması",
+     "titleEn": "Beating BERTurk on the TrGLUE Benchmark",
+     "dataset": {
+      "name": "TrSST-2 + SentiTurca + turkish_product_reviews",
+      "detail": "78K film yorumu (TrGLUE) · ürün yorumları HF’te · açık lisans",
+      "url": "https://github.com/turkish-nlp-suite"
+     },
+     "baseline": {
+      "name": "BERTurk fine-tuning",
+      "code": "TrGLUE makalesindeki HF run_glue.py protokolü",
+      "result": "TrGLUE Tablo 7’deki BERTurk referans sonuçları"
+     },
+     "target": "TrGLUE’deki BERTurk skorlarını geçmek",
+     "metric": "Accuracy + F1",
+     "strategy": [
+      "Ajan TrGLUE/SentiTurca verilerini indirir, BERTurk baseline’ını koşar",
+      "Morfolojik önişleme varyantları (kök-ek ayrımı) test edilir",
+      "Türkçe LLM ile etiket tutarlılığı oylaması yapılır",
+      "Çapraz veri seti transferi: film → ürün yorumu",
+      "Hiperparametre araması + seed ortalaması"
+     ],
+     "gpu": "Colab T4 yeterli",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · transformers/datasets",
+     "duration": "3–4 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / SCI-E dergi (Türkçe NLU açısı özgün)",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "nlp-3",
+     "code": "1.3",
+     "title": "Kısa Metinlerde Baseline’ı Geçmek: AG News’te BERT’e Karşı Adversaryal Eğitim ve Ensemble",
+     "titleEn": "Robust Short-Text Classification: Adversarial Training on AG News",
+     "dataset": {
+      "name": "AG News",
+      "detail": "4 sınıf haber başlığı+özet · 120K eğitim / 7,6K test · kısa metin (max_length=128) · HF datasets ile iner",
+      "url": "https://huggingface.co/datasets/fancyzhx/ag_news"
+     },
+     "baseline": {
+      "name": "BERT-base fine-tuning",
+      "code": "Standart Hugging Face sınıflandırma protokolü",
+      "result": "AG News %94,6 (TextFooler, Tablo 2)"
+     },
+     "target": "AG News’te %94,6 üzeri; saldırı altında dayanıklılık kazancı",
+     "metric": "Accuracy (test) + adversaryal saldırı altında accuracy",
+     "strategy": [
+      "Ajan AG News’i indirir, BERT baseline’ını koşar (max_length=128 ile döngü dakikalar sürer)",
+      "TextFooler saldırılarıyla adversaryal eğitim varyantı (kısa metinde saldırı koşusu saatler değil dakikalara iner)",
+      "RoBERTa / DeBERTa-v3 backbone karşılaştırması",
+      "Test-time augmentation ile son itme",
+      "Not: IMDB uzun yorumu (512 token) TextFooler koşusunu 6+ saate çıkarır — bu yüzden kısa metin rejimi seçildi"
+     ],
+     "gpu": "Colab T4 yeterli",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · transformers",
+     "duration": "2–3 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "nlp-4",
+     "code": "1.4",
+     "title": "Encoder NER’den Daha Fazlası: CoNLL-2003’te CRF, Veri Artırma ve Alan Ön-eğitimi",
+     "titleEn": "Squeezing More from Encoder NER: CRF, Data Augmentation and Domain Pretraining on CoNLL-2003",
+     "dataset": {
+      "name": "CoNLL-2003 (İngilizce)",
+      "detail": "4 varlık tipi · ~14k/3,2k/3,4k cümle · <100 MB · HF datasets (Reuters lisansına dikkat)",
+      "url": "https://huggingface.co/datasets/eriktks/conll2003"
+     },
+     "baseline": {
+      "name": "BERT/RoBERTa token-classification",
+      "code": "HF run_ner.py + seqeval",
+      "result": "LUKE SOTA: 94,3 F1 (Yamada ve ark., EMNLP 2020)"
+     },
+     "target": "Standart BERT F1’ini CRF + DeBERTa-v3 ile anlamlı marjla geçmek",
+     "metric": "Entity-level F1",
+     "strategy": [
+      "Ajan veri setini indirir, run_ner.py ile BERT baseline’ını koşar",
+      "DeBERTa-v3’e backbone yükseltmesi",
+      "CRF katmanı ekleme ablasyonu",
+      "Domain-adaptive pretraining + mention-level augmentation",
+      "Label smoothing ve ensemble ile son itme"
+     ],
+     "gpu": "Tek 12GB fazlasıyla yeter · Colab/Kaggle uygun",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · transformers/datasets/seqeval",
+     "duration": "1–2 hafta (bir eğitim <1 saat)",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "nlp-5",
+     "code": "1.5",
+     "title": "Dayanıklı Çıkarımsal QA: SQuAD 2.0’da Cevap Doğrulama ve Adversaryal Artırma",
+     "titleEn": "Robust Extractive QA on SQuAD 2.0 with Answer Verification and Adversarial Augmentation",
+     "dataset": {
+      "name": "SQuAD v1.1 / v2.0",
+      "detail": "~100k QA (+cevapsız sorular v2.0) · <100 MB · CC BY-SA 4.0 · HF",
+      "url": "https://huggingface.co/datasets/rajpurkar/squad_v2"
+     },
+     "baseline": {
+      "name": "BERT/RoBERTa extractive QA",
+      "code": "HF run_qa.py",
+      "result": "İnsan tavanı v1.1: 91,221 F1 / 82,304 EM (Rajpurkar ve ark., EMNLP 2016)"
+     },
+     "target": "v2.0’da no-answer eşik kalibrasyonu ile F1 kazancı",
+     "metric": "EM / F1",
+     "strategy": [
+      "Ajan SQuAD’ı indirir, run_qa.py baseline’ını koşar",
+      "DeBERTa-v3(-large) backbone yükseltmesi",
+      "Answer-verifier head ve no-answer eşiği kalibrasyonu",
+      "Adversaryal/paraphrase augmentation",
+      "Ensemble + çoklu seed raporlaması"
+     ],
+     "gpu": "Base: 12GB · Large: 24GB · Colab mümkün",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · transformers",
+     "duration": "2–3 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / B-tier / SCI dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "nlp-6",
+     "code": "1.6",
+     "title": "7–8B LLM’lerde Parametre-Verimli İnce Ayar: Sistematik Bir LoRA/QLoRA Çalışması",
+     "titleEn": "Parameter-Efficient Fine-Tuning of 7–8B LLMs: A Systematic LoRA/QLoRA Study",
+     "dataset": {
+      "name": "Küçük instruction/sınıflandırma seti",
+      "detail": "Bir GLUE alt görevi veya alan-özel etiketli set · <1 GB · HF",
+      "url": "https://huggingface.co/docs/peft"
+     },
+     "baseline": {
+      "name": "Sıfır-atış LLM / tam fine-tune referansı",
+      "code": "huggingface/peft + transformers (Llama-3.1-8B veya Qwen2.5-7B)",
+      "result": "Referans: zero-shot skoru; hedef tam fine-tune seviyesi"
+     },
+     "target": "Doğru rank + hedef modül seçimiyle tam fine-tune’a yaklaşmak",
+     "metric": "Accuracy / F1 (deterministik metrik seçilir)",
+     "strategy": [
+      "Ajan zero-shot baseline’ını ölçer ve kaydeder",
+      "QLoRA 4-bit (bitsandbytes) kurulumu",
+      "LoRA rank/alpha ızgarası + hedef modül seçimi",
+      "NEFTune noise ve DoRA varyantları",
+      "Prompt/template optimizasyonu ile kapanış"
+     ],
+     "gpu": "QLoRA 4-bit ile 7–8B tek 24GB (RTX 3090/4090) · 16GB küçük batch",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · transformers/peft/bitsandbytes/accelerate",
+     "duration": "3–4 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / uygulama dergisi",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "nlp-7",
+     "code": "1.7",
+     "title": "Hangi 8 Örnek? SetFit Az-Örnekli Sınıflandırmada Örnek Seçim Stratejileri",
+     "titleEn": "Which 8 Examples? Sample Selection Strategies for SetFit Few-Shot Classification",
+     "dataset": {
+      "name": "SST-2 / CR / TREC / AG News alt kümeleri",
+      "detail": "HF datasets ile iner · SetFit: sınıf başına 8 örnekle RoBERTa-Large’ın 3k tam eğitimine rakip (resmi iddia)",
+      "url": "https://github.com/huggingface/setfit"
+     },
+     "baseline": {
+      "name": "SetFit varsayılanı: rastgele N örnek seçimi",
+      "code": "setfit 1.2.0 + sentence-transformers",
+      "result": "Rastgele seçimde varyans çok yüksek — çok seed ile belgelenebilir"
+     },
+     "target": "Rastgele seçime karşı ortalama accuracy kazancı + varyans düşüşü",
+     "metric": "Accuracy (5 strateji × 10 seed × 4 veri seti)",
+     "strategy": [
+      "Ajan veri setlerini indirir, rastgele-seçim baseline’ını 10 seed ile koşar",
+      "k-means çeşitlilik tabanlı seçim; embedding uzayında maksimum kapsama",
+      "Aktif öğrenme (belirsizlik) ve outlier eleme varyantları",
+      "Sınıf-dengeli zorunlu seçim",
+      "Katkı: seçim stratejisi × seed varyansı haritası"
+     ],
+     "gpu": "8GB yeter; küçük modelle CPU’da bile · bir eğitim 1–5 dk",
+     "system": "Ubuntu 22.04 · setfit==1.2.0 + sentence-transformers (major sürüm sıçraması — pinleme şart)",
+     "duration": "1 hafta (toplam birkaç saat)",
+     "difficulty": 1,
+     "publishTarget": "Bildiri / workshop",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "nlp-8",
+     "code": "1.8",
+     "title": "Türkçe Az-Örnekli Metin Sınıflandırma: Çok Dilli Encoder’larla SetFit Baseline’ı",
+     "titleEn": "Few-Shot Text Classification for Turkish: A SetFit Baseline with Multilingual Encoders",
+     "dataset": {
+      "name": "Türkçe duygu/hakaret/haber sınıflandırma setleri",
+      "detail": "turkish_product_reviews ve benzerleri HF’te · öğrenciyle birlikte seçilir",
+      "url": "https://huggingface.co/datasets/fthbrmnby/turkish_product_reviews"
+     },
+     "baseline": {
+      "name": "Çok dilli SetFit checkpoint vs Türkçe BERT ince ayarı",
+      "code": "setfit çok dilli destek (resmi) + BERTurk karşılaştırması",
+      "result": "Türkçe için sistematik az-örnekli baseline literatürde zayıf — yerel avantaj"
+     },
+     "target": "Sınıf başına 2/4/8/16/32 örnek eğrisinde net sıralama",
+     "metric": "Accuracy + F1 (çok seed)",
+     "strategy": [
+      "Ajan Türkçe veri setini indirir, çok dilli SetFit baseline’ını koşar",
+      "Encoder kıyası: çok dilli vs Türkçe-özel (BERTurk embeddings)",
+      "Türkçe’ye uygun augmentation + morfolojik önişleme",
+      "Örnek sayısı eğrisi: 2/4/8/16/32",
+      "Katkı: Türkçe az-örnekli için referans tablo"
+     ],
+     "gpu": "8GB / CPU · dakikalar/deney",
+     "system": "Ubuntu 22.04 · setfit + sentence-transformers (sürüm pinle)",
+     "duration": "1 hafta",
+     "difficulty": 1,
+     "publishTarget": "Ulusal bildiri (Türkçe) veya uluslararası workshop — dersin en pratik seçeneği",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "nlp-9",
+     "code": "1.9",
+     "title": "8 Etiket mi, Sıfır mı? Küçük Sınıflandırma Görevlerinde SetFit vs Sıfır-Atış LLM",
+     "titleEn": "8 Labels or Zero? SetFit versus Zero-Shot LLM Prompting on Small Classification Tasks",
+     "dataset": {
+      "name": "4–6 küçük sınıflandırma seti",
+      "detail": "SST-2, CR, TREC, AG News vb. · HF datasets",
+      "url": "https://github.com/huggingface/setfit"
+     },
+     "baseline": {
+      "name": "İki taraf: SetFit (8 örnek) ve sıfır-atış prompt",
+      "code": "setfit + küçük açık LLM veya API (sıcaklık=0, sabit prompt)",
+      "result": "İki yaklaşımın maliyet-performans dengesi literatürde sistematik ölçülmemiş"
+     },
+     "target": "“Ne zaman hangisi?” karar kuralı + hibrit yaklaşım",
+     "metric": "Accuracy + maliyet (etiketleme vs API vs gecikme)",
+     "strategy": [
+      "Ajan iki baseline’ı da koşar: SetFit ve sıfır-atış LLM",
+      "Maliyet-performans eğrisi: etiketleme maliyeti vs API maliyeti vs çıkarım gecikmesi",
+      "Prompt duyarlılığı analizi",
+      "Hibrit: LLM pseudo-label → SetFit eğitimi",
+      "Katkı: pratik karar kuralı (uygulamacılar için değerli)"
+     ],
+     "gpu": "SetFit tarafı 8GB · LLM tarafı API ile GPU’suz olabilir",
+     "system": "Ubuntu 22.04 · setfit + transformers (deterministik metrik kullan; sıcaklık=0)",
+     "duration": "2 hafta",
+     "difficulty": 2,
+     "publishTarget": "Bildiri",
+     "orchFit": "Yüksek"
+    }
+   ]
+  },
+  {
+   "id": "cv",
+   "no": "02",
+   "name": "Bilgisayarla Görü",
+   "short": "Tespit · Fine-grained · Segmentasyon",
+   "color": "#b3543f",
+   "blurb": "Ultralytics, timm ve MMSegmentation tek komutlu eğitim ve otomatik metrik loglama sağlar — agent’ın metrik parse etmesi kolaylaşır. VOC, CUB-200 ve CIFAR-10 gibi küçük-orta setlerde dönem içinde onlarca deney döner.",
+   "topics": [
+    {
+     "id": "cv-1",
+     "code": "2.1",
+     "title": "PASCAL VOC’ta Gerçek Zamanlı Nesne Tespiti: Augmentation ve Loss İyileştirmesi",
+     "titleEn": "Enhancing Real-Time Object Detection on PASCAL VOC via Augmentation and Loss Refinement",
+     "dataset": {
+      "name": "PASCAL VOC 2007+2012",
+      "detail": "20 sınıf · ~16,5k trainval + ~5k test · ~2–3 GB · Ultralytics otomatik indirir",
+      "url": "https://docs.ultralytics.com/"
+     },
+     "baseline": {
+      "name": "Ultralytics YOLO11 / RT-DETR",
+      "code": "ultralytics paketi · lyuwenyu/RT-DETR",
+      "result": "RT-DETR-R50 COCO’da 108 FPS’de %53,1 AP (Zhao ve ark., CVPR 2024); VOC’ta iyileştirme payı açık"
+     },
+     "target": "VOC mAP@0.5:0.95’te baseline üzeri (+1–3 puan gerçekçi)",
+     "metric": "mAP@0.5 / mAP@0.5:0.95",
+     "strategy": [
+      "Ajan VOC’u indirir, YOLO11 baseline’ını tek komutla koşar (results.csv parse edilir)",
+      "Mosaic + MixUp + CopyPaste augmentation ızgarası",
+      "Daha uzun eğitim + EMA; backbone yükseltme",
+      "Soft-NMS / WBF post-processing + TTA (çoklu ölçek + flip)",
+      "COCO ön-eğitiminden transfer ablasyonu"
+     ],
+     "gpu": "Tek RTX 3090/4090 rahat · 12GB küçük modelle olur · Colab uygun",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · PyTorch 2.3+ · ultralytics",
+     "duration": "2–3 hafta (10–20 deney rahat döner)",
+     "difficulty": 1,
+     "publishTarget": "Workshop / B-tier konferans / SCI-E dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "cv-2",
+     "code": "2.2",
+     "title": "Backbone’un Ötesi: CUB-200’te Self-Supervised Ön-eğitim ve Dikkat ile İnce-Taneli Sınıflandırma",
+     "titleEn": "Beyond Backbones: Self-Supervised Pretraining and Attention for Fine-Grained Bird Classification",
+     "dataset": {
+      "name": "CUB-200-2011",
+      "detail": "200 kuş türü · 11.788 görüntü · ~1,1 GB (Wah ve ark., CNS-TR-2011-001) · HF/Kaggle mirror",
+      "url": "https://huggingface.co/pytorch-image-models"
+     },
+     "baseline": {
+      "name": "timm ConvNeXt / ViT / ResNet",
+      "code": "huggingface/pytorch-image-models eğitim scriptleri",
+      "result": "Güçlü backbone’larla Top-1 ~%88–93 bandı"
+     },
+     "target": "Standart timm protokolünü 448px + DINOv2/MAE init ile geçmek",
+     "metric": "Top-1 accuracy",
+     "strategy": [
+      "Ajan CUB-200’ü indirir, timm baseline’ını koşar",
+      "DINOv2/MAE self-supervised pretrain’den başlatma",
+      "Yüksek çözünürlük (448px) fine-tuning",
+      "RandAugment + CutMix + label smoothing; bilinear/attention pooling",
+      "TTA + class-balanced loss"
+     ],
+     "gpu": "Tek 12–24GB yeter · Colab/Kaggle uygun",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · PyTorch 2.3+ · timm",
+     "duration": "2–3 hafta (bir fine-tune birkaç saat)",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "cv-3",
+     "code": "2.3",
+     "title": "ADE20K’da Verimli Semantik Segmentasyon: SegFormer’ı Güçlü Augmentation ile Yeniden Ziyaret",
+     "titleEn": "Efficient Semantic Segmentation on ADE20K: Revisiting SegFormer with Stronger Augmentation",
+     "dataset": {
+      "name": "ADE20K",
+      "detail": "150 sınıf · ~20k train + 2k val · ~4 GB · MMSeg otomatik indirir",
+      "url": "https://github.com/open-mmlab/mmsegmentation"
+     },
+     "baseline": {
+      "name": "SegFormer / Mask2Former (MMSegmentation)",
+      "code": "open-mmlab/mmsegmentation config-tabanlı eğitim",
+      "result": "Mask2Former (Swin-L) yüksek mIoU; SegFormer hafif rakip"
+     },
+     "target": "Aynı backbone’da mIoU kazancı (TTA + çoklu ölçek güvenilir verir)",
+     "metric": "mIoU",
+     "strategy": [
+      "Ajan ADE20K’yı indirir, SegFormer baseline config’ini koşar",
+      "Daha güçlü backbone (Swin/ConvNeXt) varyantı",
+      "Çoklu ölçek eğitim + TTA",
+      "OHEM / class-balanced loss + auxiliary head",
+      "CRF/post-processing + ImageNet-22k pretrain"
+     ],
+     "gpu": "SegFormer-B0/B1: 12GB · Mask2Former: 24GB önerilir · Colab sınırlı",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · mmcv/mmseg (sürüm eşleşmesine dikkat!)",
+     "duration": "3–4 hafta (hafif model ~1 gün/eğitim)",
+     "difficulty": 2,
+     "publishTarget": "B-tier konferans / SCI dergi",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "cv-4",
+     "code": "2.4",
+     "title": "Saniyeler İçinde %94: CIFAR-10’da Hız-Protokolü Optimizasyonu",
+     "titleEn": "Speed-Protocol Optimization on CIFAR-10 with airbench",
+     "dataset": {
+      "name": "CIFAR-10",
+      "detail": "50K eğitim / 10K test, 32×32 · torchvision’dan iner",
+      "url": "https://www.cs.toronto.edu/~kriz/cifar.html"
+     },
+     "baseline": {
+      "name": "Standart ResNet-18 / airbench hız protokolü",
+      "code": "pip install airbench",
+      "result": "%94 ort. doğruluk, 3,29 sn/A100 (airbench); ResNet-18+cutout %96,01"
+     },
+     "target": "Hız-doğruluk Pareto eğrisinde yeni nokta",
+     "metric": "Accuracy + eğitim süresi",
+     "strategy": [
+      "Ajan CIFAR-10’u indirir, airbench protokolünü koşar",
+      "Augmentation kombinasyonları: flip / crop / cutout ablasyonu",
+      "Öğrenme oranı çizelgesi araması",
+      "Patch-whitening başlangıcının katkı analizi",
+      "Bütçeli ortamda minimum-süre varyantı"
+     ],
+     "gpu": "Tek GPU · saniyeler–dakikalar/koşu",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · PyTorch 2.3+ · airbench",
+     "duration": "1–2 hafta",
+     "difficulty": 1,
+     "publishTarget": "Workshop (hız protokolü odaklı) — Uyarı: CIFAR-10 doygun bir benchmark; katkı “doğruluk rekoru” değil Pareto-eğrisi/hız protokolü çerçevesinde sunulmalı, aksi hâlde jüri tarafından ders ödevi gibi algılanabilir",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "cv-5",
+     "code": "2.5",
+     "title": "Hareketli Kamera Görüntülerinde Plaka Tanıma: Ajan Yönlendirmeli Dinamik Veri Çoğaltma (AutoAugment) Optimizasyonu",
+     "titleEn": "Agent-Guided Dynamic Augmentation Search for License Plate Recognition on Moving-Camera Footage",
+     "dataset": {
+      "name": "UFPR-ALPR (veya CCPD)",
+      "detail": "UFPR-ALPR: 4.500 görüntü, 150 araç, hareketli kamera/drone · CCPD: ~300k görüntü · resmi sayfalardan iner",
+      "url": "https://web.inf.ufpr.br/vri/databases/ufpr-alpr/"
+     },
+     "baseline": {
+      "name": "YOLOv8 / YOLO11 standart nesne tespiti",
+      "code": "ultralytics paketi, varsayılan augmentation ile tek komut eğitim",
+      "result": "Varsayılan mAP kendi koşunuzda sabitlenir; hareket bulanıklığı ve açı bozulumunda belirgin düşüş"
+     },
+     "target": "Hareketli/bulanık alt kümede varsayılan augmentation üzeri mAP",
+     "metric": "mAP@0.5 / mAP@0.5:0.95 (+ bulanıklık alt kümesi ayrı raporlanır)",
+     "strategy": [
+      "Ajan UFPR-ALPR’yi indirir, varsayılan YOLO eğitimini koşar ve referans mAP’i kaydeder",
+      "Aydınlatma, motion blur ve açı bozulumu parametrelerini iteratif arayan ajan döngüsü",
+      "AutoAugment-politika araması (ajan mantığıyla optimal veri seti üretimi)",
+      "Optimal augmentation ile modeli yeniden eğitme",
+      "Hata analizi: hangi bozulum tipinde kazanç/kayıp (edge case görselleştirmesi)"
+     ],
+     "gpu": "Tek 12–24GB rahat · bir eğitim birkaç saat · Colab uygun",
+     "system": "Ubuntu 22.04 LTS · CUDA 12.1 · PyTorch 2.3+ · ultralytics",
+     "duration": "2–3 hafta",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E dergi (uygulama odaklı)",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "cv-6",
+     "code": "2.6",
+     "title": "Hız Reçeteleri Genellenebilir mi? CIFAR-10 Hızlı-Eğitim Yöntemlerinin CIFAR-100’e Uyarlanması",
+     "titleEn": "Do Speedrun Recipes Transfer? Adapting CIFAR-10 Fast-Training Methods to CIFAR-100",
+     "dataset": {
+      "name": "CIFAR-100",
+      "detail": "100 sınıf · ~170 MB · torchvision tek satırla indirir",
+      "url": "https://github.com/KellerJordan/cifar10-airbench"
+     },
+     "baseline": {
+      "name": "airbench mimarisi + standart ResNet-18 referansı",
+      "code": "cifar10-airbench’in CIFAR-100’e portu",
+      "result": "Referanslar: airbench94 (94,01% @ 2,59 sn A100) ve airbench96 (96,00% @ 27,3 sn); CIFAR-100’te reçete doğrudan çalışmaz"
+     },
+     "target": "CIFAR-100’de aynı saniye bütçesinde standart eğitimden anlamlı yüksek doğruluk",
+     "metric": "Accuracy + eğitim süresi (sabit saniye bütçesi)",
+     "strategy": [
+      "Ajan CIFAR-100’ü indirir, port edilmiş airbench’i koşar ve bozulan hiperparametreleri tespit eder",
+      "Genişlik/derinlik ölçekleme; son katman öğrenme oranı",
+      "Augmentation yoğunluğu (sınıf başına örnek azaldıkça regularizasyon artırma)",
+      "Muon vs SGD vs AdamW kıyası",
+      "Katkı: “reçete genellenebilir mi” sorusuna net pozitif/negatif yanıt"
+     ],
+     "gpu": "8GB yeter · tek deney <1 dk · Colab T4 rahat",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · torch + torchvision (bağımlılıksız script)",
+     "duration": "1 hafta",
+     "difficulty": 1,
+     "publishTarget": "Bildiri / workshop",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "cv-7",
+     "code": "2.7",
+     "title": "Hızlı Eğitim Gürültülü Etiketle Buluşunca: Saniye-Ölçekli CIFAR Reçetelerinin Dayanıklılığı",
+     "titleEn": "Fast Training Meets Noisy Labels: Robustness of Second-Scale CIFAR Recipes",
+     "dataset": {
+      "name": "CIFAR-10 + sentetik etiket gürültüsü (%10–40)",
+      "detail": "Simetrik/asimetrik gürültü enjeksiyonu deterministik · cleanlab 2.9.0 ile gerçek etiket hatası tespiti",
+      "url": "https://github.com/KellerJordan/cifar10-airbench"
+     },
+     "baseline": {
+      "name": "airbench94 (temiz vs gürültülü)",
+      "code": "airbench + cleanlab ile temizlenmiş varyant",
+      "result": "Temiz veri: 94,01% @ 2,59 sn; gürültü altında performans incelenmemiş açı"
+     },
+     "target": "%20–40 gürültüde en az performans kaybıyla çalışan varyant",
+     "metric": "Accuracy (gürültü seviyesi × yöntem × seed matrisi)",
+     "strategy": [
+      "Ajan gürültüyü enjekte eder, airbench baseline’ını her seviyede koşar",
+      "Gürültü-robust loss (GCE, SCE) varyantları",
+      "Erken durdurma + label smoothing",
+      "cleanlab ile veri temizleme sonrası yeniden eğitim",
+      "Gürültü seviyesi × yöntem ısı haritası makalenin ana figürü"
+     ],
+     "gpu": "8GB · saniyeler/deney · Colab uygun",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · torch/torchvision/cleanlab==2.9.0",
+     "duration": "1 hafta (toplam birkaç saat hesap)",
+     "difficulty": 2,
+     "publishTarget": "Bildiri / workshop",
+     "orchFit": "Çok yüksek"
+    }
+   ]
+  },
+  {
+   "id": "tta",
+   "no": "02b",
+   "name": "Görü Robustluğu: Test-Zamanı Adaptasyon",
+   "short": "Tent · CIFAR-10-C · Eğitim Yok",
+   "color": "#a03d2e",
+   "blurb": "Bu alanda model eğitilmez: hazır eğitilmiş model indirilir, sadece çıkarım sırasında adapte edilir. GPU yükü minimum, tek geçiş dakikalar — orkestra yüzlerce konfigürasyon tarayabilir. Tent’in hazır source/norm/tent karşılaştırma üçlüsü baseline’ı kutu içinden çıkarır.",
+   "topics": [
+    {
+     "id": "tta-1",
+     "code": "2b.1",
+     "title": "Test-Zamanı Adaptasyon Ne Kadar Kırılgan? Küçük Batch Altında Tent Duyarlılık Çalışması",
+     "titleEn": "How Fragile is Test-Time Adaptation? A Sensitivity Study of Tent under Small Batches",
+     "dataset": {
+      "name": "CIFAR-10-C (15 bozulma × 5 şiddet)",
+      "detail": "hendrycks/robustness kaynaklı · robustbench 1.1.1 ile otomatik iner",
+      "url": "https://github.com/DequanWang/tent"
+     },
+     "baseline": {
+      "name": "Tent source / norm / tent üçlüsü",
+      "code": "DequanWang/tent (yacs config-tabanlı) · WRN-28-10 (RobustBench varsayılanı)",
+      "result": "Batch başına tek güncelleme ile bozulmalarda tutarlı hata düşüşü (Tent, ICLR 2021 spotlight)"
+     },
+     "target": "Küçük batch’te (64→16→1) Tent çöküşünün haritası + basit bir düzeltme",
+     "metric": "Hata oranı (15 bozulma × 5 seviye ortalaması)",
+     "strategy": [
+      "Ajan CIFAR-10-C’yi indirir, source/norm/tent üçlüsünü koşar ve tabloyu kaydeder",
+      "Batch boyutu taraması: 200 → 64 → 16 → 1",
+      "Öğrenme oranı + BN momentum duyarlılığı",
+      "Episodic vs continual adaptasyon kıyası",
+      "Basit düzeltme önerisi (ör. seçici entropi) ile kapanış"
+     ],
+     "gpu": "8GB fazlasıyla yeter — eğitim yok, forward + tek backward · Colab çok rahat",
+     "system": "Ubuntu 22.04 · torch + robustbench==1.1.1 + yacs (sürüm uyumu kontrol edilmeli)",
+     "duration": "1–2 hafta (tam tarama birkaç saat)",
+     "difficulty": 1,
+     "publishTarget": "Bildiri / workshop (duyarlılık çalışmaları iyi karşılanır)",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "tta-2",
+     "code": "2b.2",
+     "title": "Eşit Bütçede Adil Karşılaştırma: Modern TTA Yöntemlerinin Birleşik Değerlendirmesi",
+     "titleEn": "A Unified Fair Comparison of Test-Time Adaptation Methods under Matched Budgets",
+     "dataset": {
+      "name": "CIFAR-10-C / CIFAR-100-C",
+      "detail": "Aynı robustness ailesi · otomatik indirme",
+      "url": "https://github.com/mariodoebler/test-time-adaptation"
+     },
+     "baseline": {
+      "name": "Çok yöntemli TTA kütüphanesi",
+      "code": "mariodoebler/test-time-adaptation (birden çok TTA yöntemi tek çatıda)",
+      "result": "Literatürdeki karşılaştırmalar çoğunlukla eşitsiz bütçeyle yapılıyor — düzeltilecek açık"
+     },
+     "target": "Aynı adaptasyon bütçesinde (aynı güncelleme sayısı, aynı batch) adil sıralama + küçük hibrit",
+     "metric": "Ortalama hata oranı",
+     "strategy": [
+      "Ajan kütüphanedeki tüm yöntemleri aynı bütçeyle koşar",
+      "Güncelleme sayısı ve batch boyutunu sabitleyerek adil protokol kurar",
+      "Norm + seçici entropi hibrit varyantı önerir",
+      "Yöntem × bozulma grubu etkileşim analizi",
+      "Katkı: adil protokol tablosu + hibrit yöntem"
+     ],
+     "gpu": "8GB · Colab uygun",
+     "system": "Ubuntu 22.04 · repo requirements.txt pinlenmeli",
+     "duration": "2–3 hafta (yöntem başına dakikalar; matris birkaç saat)",
+     "difficulty": 2,
+     "publishTarget": "Bildiri",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "tta-3",
+     "code": "2b.3",
+     "title": "Bütün Bozulmalar Eşit Değil: Bozulma-Farkında Test-Zamanı Strateji Seçimi",
+     "titleEn": "Not All Corruptions Are Equal: Corruption-Aware Selection of TTA Strategies",
+     "dataset": {
+      "name": "CIFAR-10-C",
+      "detail": "15 bozulma: gürültü, bulanıklık, hava, dijital grupları",
+      "url": "https://github.com/hendrycks/robustness"
+     },
+     "baseline": {
+      "name": "Tent (tüm bozulmalara aynı strateji)",
+      "code": "DequanWang/tent",
+      "result": "Tek-strateji yaklaşımının bozulma grubuna göre değişen etkinliği"
+     },
+     "target": "Ucuz bir “router” ile ortalama hatanın tek-strateji altına indirilmesi",
+     "metric": "Ortalama hata oranı + bozulma grubu bazında kazanç",
+     "strategy": [
+      "Ajan her bozulma grubunda norm mu tent mi kazanıyor haritasını çıkarır",
+      "Bozulma-tipi tahmincisi: entropi / BN istatistik kayması ile sınıflandırıcı",
+      "Router: tahmin edilen bozulmaya göre strateji seçimi",
+      "Router maliyeti ve yanlış-seçim analizi",
+      "Katkı: ölçülebilir, ucuz strateji-seçici"
+     ],
+     "gpu": "8GB",
+     "system": "Ubuntu 22.04 · torch + robustbench + yacs",
+     "duration": "2 hafta",
+     "difficulty": 2,
+     "publishTarget": "Bildiri",
+     "orchFit": "Yüksek"
+    }
+   ]
+  },
+  {
+   "id": "med",
+   "no": "03",
+   "name": "Tıbbi Görüntüleme",
+   "short": "MedMNIST · Polip · nnU-Net · ISIC",
+   "color": "#d45d79",
+   "blurb": "Küçük ama ciddi benchmark’lar: MedMNIST pip ile iner, Kvasir-SEG 46 MB, ISIC birkaç GB. Resmi benchmark tabloları (ResNet/AutoML/PraNet) “geçilecek otorite”yi net tanımlar. Not: medikal sonuçlar klinik iddia içermemeli.",
+   "topics": [
+    {
+     "id": "med-1",
+     "code": "3.1",
+     "title": "Düşük Çözünürlükte Transfer Öğrenme: DermaMNIST’te ResNet-18’in DINOv2 ile Aşılması",
+     "titleEn": "Beating the MedMNIST Baseline with Self-Supervised Features",
+     "dataset": {
+      "name": "DermaMNIST",
+      "detail": "7 sınıf cilt lezyonu · pip install medmnist ile iner · CC lisans",
+      "url": "https://medmnist.com/"
+     },
+     "baseline": {
+      "name": "ResNet-18 (28px), sıfırdan",
+      "code": "MedMNIST resmi benchmark kodu (MedMNIST/MedMNIST)",
+      "result": "ACC 0,735 / AUC 0,917 (MedMNIST v2, Tablo 3)"
+     },
+     "target": "ACC ≥ 0,80 (DINOv2 özellikleriyle %92,02 raporlanmış)",
+     "metric": "ACC + AUC",
+     "strategy": [
+      "Ajan veri setini indirir, resmi ResNet-18 baseline’ını koşar",
+      "224px ölçekleme + ImageNet önağırlıkları",
+      "DINOv2 öznitelik çıkarımı + doğrusal sonda varyantı",
+      "Sınıf dengesizliği için focal loss",
+      "Augmentation araması + TTA"
+     ],
+     "gpu": "Colab T4 yeterli (~30–60 dk/koşu)",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · PyTorch 2.3+ · medmnist/timm",
+     "duration": "2–3 hafta",
+     "difficulty": 1,
+     "publishTarget": "SCI dergi (medikal) / Workshop",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "med-2",
+     "code": "3.2",
+     "title": "OtoML’e Karşı İnsan-Ajan İşbirliği: PneumoniaMNIST ve BloodMNIST’te AutoKeras/AutoGluon’u Geçmek",
+     "titleEn": "Human-Agent Teaming vs Open-Source AutoML on MedMNIST Benchmarks",
+     "dataset": {
+      "name": "PneumoniaMNIST + BloodMNIST",
+      "detail": "İkili pnömoni + 8 sınıf kan hücresi · MedMNIST (pip install medmnist)",
+      "url": "https://medmnist.com/"
+     },
+     "baseline": {
+      "name": "AutoKeras / AutoGluon (yerel kurulabilir açık kaynak AutoML)",
+      "code": "autokeras / autogluon pip paketleri — ajan koşabilir (ticari Google AutoML koşulamaz, o referans tablodan okunur)",
+      "result": "Resmi tablo: AutoKeras ort. 0,813 ACC · Google AutoML Vision 0,809 · ResNet-18 0,819 (MedMNIST v2)"
+     },
+     "target": "AutoKeras’ın ortalama ACC’sini aşmak; BloodMNIST’te %97+ (ViT bandı)",
+     "metric": "ACC + AUC",
+     "strategy": [
+      "Ajan iki veri setinde ResNet-18/50 baseline’larını koşar",
+      "AutoKeras/AutoGluon’u yerel kurar, aynı split ile rakip koşuyu üretir",
+      "Backbone taraması: ResNet → EfficientNet → ViT",
+      "Çözünürlük × öğrenme oranı ızgarası",
+      "5 modellik çoğunluk oylaması ensemble’ı; sonuçlar resmi Tablo 3 ile yan yana"
+     ],
+     "gpu": "Colab T4 yeterli (~1 saat/koşu)",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · PyTorch 2.3+ · medmnist/timm/autokeras",
+     "duration": "2–3 hafta",
+     "difficulty": 2,
+     "publishTarget": "SCI dergi (medikal) / Workshop",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "med-3",
+     "code": "3.3",
+     "title": "Kvasir-SEG’de Polip Segmentasyonu: Sınır-Farkında Loss ve Çoklu Ölçek Dikkat",
+     "titleEn": "Improving Polyp Segmentation on Kvasir-SEG: Boundary-Aware Loss and Multi-Scale Attention",
+     "dataset": {
+      "name": "Kvasir-SEG",
+      "detail": "1.000 polip görüntüsü + maske · ~46 MB · simula/datasets veya Kaggle",
+      "url": "https://github.com/DengPingFan/PraNet"
+     },
+     "baseline": {
+      "name": "PraNet / Polyp-PVT",
+      "code": "DengPingFan/PraNet resmi repo",
+      "result": "PraNet ortalama Dice 0,898 (Fan ve ark., MICCAI 2020)"
+     },
+     "target": "mDice’da 0,898 üzeri",
+     "metric": "mDice / mIoU",
+     "strategy": [
+      "Ajan Kvasir-SEG’i indirir, PraNet baseline’ını koşar",
+      "Boundary / Tversky / focal loss varyantları",
+      "PVT/transformer backbone yükseltmesi",
+      "Çoklu ölçek + TTA; elastic ve renk augmentation",
+      "Sınır iyileştirme post-processing"
+     ],
+     "gpu": "Tek 12GB yeter · Colab/Kaggle çok rahat",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · PyTorch 2.1–2.3",
+     "duration": "2–3 hafta (birkaç saat/eğitim)",
+     "difficulty": 1,
+     "publishTarget": "SCI dergi (medikal) / konferans",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "med-4",
+     "code": "3.4",
+     "title": "ISIC’te Sınıf Dengesizliği ile Mücadele: Dengeli Loss ve Güçlü Augmentation",
+     "titleEn": "Tackling Class Imbalance in Skin Lesion Classification on ISIC",
+     "dataset": {
+      "name": "ISIC 2018 Task3 (veya 2019)",
+      "detail": "7 sınıf · ~10k görüntü · birkaç GB · ISIC Archive (CC)",
+      "url": "https://challenge.isic-archive.com/"
+     },
+     "baseline": {
+      "name": "timm EfficientNet/ConvNeXt standart pipeline",
+      "code": "pytorch-image-models + standart eğitim döngüsü",
+      "result": "Kaggle/challenge referans skorları mevcut"
+     },
+     "target": "Balanced accuracy / AUC’da baseline üzeri",
+     "metric": "Balanced accuracy / AUC",
+     "strategy": [
+      "Ajan ISIC’i indirir, timm baseline’ını koşar",
+      "Class-balanced / focal loss",
+      "Güçlü augmentation (renk, RandAugment)",
+      "Metadata füzyonu varyantı",
+      "EfficientNet+ConvNeXt ensemble + TTA"
+     ],
+     "gpu": "Tek 12–24GB yeter · Colab uygun",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · PyTorch 2.3+ · timm",
+     "duration": "2–3 hafta",
+     "difficulty": 2,
+     "publishTarget": "SCI dergi (medikal)",
+     "orchFit": "Yüksek"
+    }
+   ]
+  },
+  {
+   "id": "audio",
+   "no": "04",
+   "name": "Konuşma & Ses İşleme",
+   "short": "ESC-50 · KWS · Düşük-kaynak ASR",
+   "color": "#00806b",
+   "blurb": "Ses tarafı küçük veri setleriyle (ESC-50 sadece 2.000 klip) dakikalar içinde döngü tamamlar. Türkçe Common Voice ile düşük-kaynak ASR, hem özgün hem yayınlanabilir bir yerel avantaj sunar. Not: ESC-50 CC BY-NC — ticari kullanım yok.",
+   "topics": [
+    {
+     "id": "audio-1",
+     "code": "4.1",
+     "title": "Veri-Verimli Çevresel Ses Sınıflandırma: ESC-50’de SpecAugment ve Self-Supervised Ön-eğitim",
+     "titleEn": "Data-Efficient Environmental Sound Classification on ESC-50",
+     "dataset": {
+      "name": "ESC-50",
+      "detail": "50 sınıf · 2.000 klip (5 sn) · ~600 MB · CC BY-NC · karolpiczak/ESC-50",
+      "url": "https://github.com/karolpiczak/ESC-50"
+     },
+     "baseline": {
+      "name": "AST — Audio Spectrogram Transformer",
+      "code": "YuanGongND/ast",
+      "result": "%95,6 accuracy ile SOTA (Gong ve ark., Interspeech 2021)"
+     },
+     "target": "Doymuşluğa karşı açı: veri-verimli rejim veya robustluk ekseninde kazanç",
+     "metric": "Accuracy (5-fold)",
+     "strategy": [
+      "Ajan ESC-50’yi indirir, AST baseline’ını koşar",
+      "SpecAugment + MixUp ızgarası",
+      "AudioSet pretrain / SSL (SSAST, BEATs) init kıyası",
+      "TTA (zaman kaydırma) + ensemble",
+      "Az-fold / az-pretrain veri-verimliliği ablasyonu"
+     ],
+     "gpu": "Tek 12GB fazlasıyla yeter · Colab/Kaggle çok rahat",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · torchaudio + timm",
+     "duration": "1–2 hafta (bir fold dakikalar–saat)",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "audio-2",
+     "code": "4.2",
+     "title": "Anahtar Kelime Tanıma Yeniden: Speech Commands v2’de Verimli Mimariler ve Augmentation",
+     "titleEn": "Keyword Spotting Revisited: Efficient Architectures and Augmentation on Speech Commands v2",
+     "dataset": {
+      "name": "Google Speech Commands v2",
+      "detail": "35 kelime · ~105k kayıt (1 sn) · ~2,3 GB · CC BY 4.0 · torchaudio otomatik",
+      "url": "https://pytorch.org/audio/stable/generated/torchaudio.datasets.SPEECHCOMMANDS.html"
+     },
+     "baseline": {
+      "name": "BC-ResNet / KWT (Keyword Transformer)",
+      "code": "Açık kaynak KWS implementasyonları",
+      "result": ">%97 doğruluk bölgesi — verimlilik/robustluk payı açık"
+     },
+     "target": "Aynı doğrulukta daha küçük model veya gürültüde daha dayanıklı model",
+     "metric": "Accuracy + model boyutu / gürültüde accuracy",
+     "strategy": [
+      "Ajan veri setini indirir, BC-ResNet baseline’ını koşar",
+      "SpecAugment + gürültü ekleme + MixUp",
+      "Hafif mimari (BC-ResNet) vs transformer kıyası",
+      "Distillation ile küçültme",
+      "Kuantizasyon (edge verimliliği) varyantı"
+     ],
+     "gpu": "Tek 12GB yeter · Colab uygun",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · torchaudio",
+     "duration": "2–3 hafta (birkaç saat/eğitim)",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "audio-3",
+     "code": "4.3",
+     "title": "Düşük-Kaynaklı ASR: Common Voice Türkçe Alt Kümesinde Whisper İnce Ayarı",
+     "titleEn": "Low-Resource ASR Fine-Tuning: Whisper on a Common Voice Language Subset",
+     "dataset": {
+      "name": "Mozilla Common Voice (Türkçe)",
+      "detail": "Boyut dile göre ~birkaç GB · CC0 · HF: mozilla-foundation/common_voice (onay gerekebilir)",
+      "url": "https://huggingface.co/datasets/mozilla-foundation/common_voice_13_0"
+     },
+     "baseline": {
+      "name": "Sıfır-atış Whisper",
+      "code": "openai/whisper + HF fine-tuning tutorial",
+      "result": "Referans: zero-shot WER (Türkçe’de yüksek)"
+     },
+     "target": "WER’de fine-tune + augmentation ile belirgin düşüş",
+     "metric": "WER (kelime hata oranı)",
+     "strategy": [
+      "Ajan Common Voice TR’yi indirir, zero-shot WER’i ölçer",
+      "Whisper small/medium fine-tune (large için LoRA)",
+      "SpecAugment + hız/pitch perturbation",
+      "Veri temizleme turu (ajan önerili filtreler)",
+      "Dil-modeli rescoring varyantı"
+     ],
+     "gpu": "small/medium: tek 24GB fine-tune · large: LoRA/PEFT · Colab Pro mümkün",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · transformers/datasets/torchaudio",
+     "duration": "3–4 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / SCI dergi (Türkçe düşük-kaynak açısı özgün)",
+     "orchFit": "Yüksek"
+    }
+   ]
+  },
+  {
+   "id": "ts",
+   "no": "05",
+   "name": "Zaman Serisi Tahmini",
+   "short": "TSLib · ETT · Weather · Exchange",
+   "color": "#2f5d50",
+   "blurb": "Literatür “tek şampiyon yok” diyor: sıralamalar veri seti ve ufuğa göre değişiyor. Time-Series-Library tek script’le tüm model/dataset kombinasyonlarını koşar, MSE/MAE otomatik loglanır — ideal orkestra adayı.",
+   "topics": [
+    {
+     "id": "ts-1",
+     "code": "5.1",
+     "title": "Ufka Duyarlı Model Seçimi: ETTh1’de PatchTST’yi Geçen Orkestrasyon Araması",
+     "titleEn": "Horizon-Aware Model Selection on ETTh1",
+     "dataset": {
+      "name": "ETTh1 / ETTh2",
+      "detail": "7 değişken, saatlik · <1 GB · TSLib veri yükleyici otomatik indirir",
+      "url": "https://github.com/thuml/Time-Series-Library"
+     },
+     "baseline": {
+      "name": "PatchTST (ICLR 2023)",
+      "code": "yuqinie98/patchtst veya TSLib",
+      "result": "TSLib HP-aramalı ort. MSE 0,305 · ETTh1-96’da ~0,36–0,40"
+     },
+     "target": "Belirli ufuklarda (ör. 96 ve 720) PatchTST MSE’sinin altı",
+     "metric": "MSE / MAE (4 ufuk)",
+     "strategy": [
+      "Ajan ETT’yi indirir, TSLib ile PatchTST baseline’ını koşar",
+      "Lookback penceresi taraması: 96 → 720",
+      "Patch uzunluğu / stride ızgarası",
+      "RevIN aç-kapa ablasyonu",
+      "Her ufuk için ayrı en-iyi yapılandırma seçimi"
+     ],
+     "gpu": "Tek 12GB fazlasıyla yeter · Colab/Kaggle çok rahat",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · PyTorch 2.1+ · TSLib bağımlılıkları",
+     "duration": "2–3 hafta (dakikalar–1 saat/koşu)",
+     "difficulty": 2,
+     "publishTarget": "B-tier konferans / SCI dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "ts-2",
+     "code": "5.2",
+     "title": "Basitliğin Gücü: DLinear’a Kanal Karıştırma Ekleyerek iTransformer’ı Yakalamak",
+     "titleEn": "Channel-Mixing DLinear vs iTransformer on Weather",
+     "dataset": {
+      "name": "Weather + ETTm1/ETTm2",
+      "detail": "Weather: 21 kanal, 10 dk · TSLib üzerinden",
+      "url": "https://github.com/thuml/Time-Series-Library"
+     },
+     "baseline": {
+      "name": "iTransformer / DLinear",
+      "code": "TSLib (her iki model de kutuda)",
+      "result": "iTransformer 9 veri setinin 5’inde liderdi; DLinear güçlü lineer baseline"
+     },
+     "target": "Weather ortalama MSE’de iTransformer’a yaklaşmak/geçmek",
+     "metric": "MSE / MAE",
+     "strategy": [
+      "Ajan DLinear ve iTransformer baseline’larını koşar",
+      "DLinear’a hafif kanal-karıştırma katmanı eklenir",
+      "Dekompozisyon çekirdek boyutu araması",
+      "Electricity’de çok-değişkenli korelasyon varyantı",
+      "Parametre bütçesi sabit tutularak adil kıyas"
+     ],
+     "gpu": "Tek 12GB yeter · Colab uygun",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · TSLib",
+     "duration": "3–4 hafta",
+     "difficulty": 2,
+     "publishTarget": "B-tier konferans / SCI dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "ts-3",
+     "code": "5.3",
+     "title": "Dağılım Kayması Altında Tahmin: Exchange-Rate’de Dayanıklılık Analizi",
+     "titleEn": "Forecasting under Distribution Shift on Exchange-Rate",
+     "dataset": {
+      "name": "Exchange-Rate",
+      "detail": "8 değişken, günlük, 7.588 adım · en yüksek kayma (MMD 0,805)",
+      "url": "https://github.com/thuml/Time-Series-Library"
+     },
+     "baseline": {
+      "name": "iTransformer",
+      "code": "TSLib",
+      "result": "Exchange’de literatürde en iyi ortalama MSE"
+     },
+     "target": "Kayma altında MSE iyileşmesi + dayanıklılık metriği",
+     "metric": "MSE + kayma-dayanıklılığı",
+     "strategy": [
+      "Ajan Exchange-Rate’i indirir, iTransformer’ı koşar",
+      "Normalizasyon stratejileri: RevIN / Dish-TS kıyası",
+      "Kaymaya dayanıklı kayıp fonksiyonu varyantları",
+      "Online/sürekli öğrenme denemesi",
+      "Katkı: doğruluktan çok dayanıklılık analizi"
+     ],
+     "gpu": "Küçük veri seti · CPU bile hızlı",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · TSLib",
+     "duration": "2–3 hafta",
+     "difficulty": 3,
+     "publishTarget": "B-tier konferans / SCI dergi",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "ts-4",
+     "code": "5.4",
+     "title": "Daha Güçlü Uzun-Ufuk Tahmini: PatchTST/iTransformer Üzerine Ayrıştırma ve Patch Stratejileri",
+     "titleEn": "Stronger Long-Term Forecasting: Decomposition and Patch Strategies over PatchTST/iTransformer",
+     "dataset": {
+      "name": "ETT + Electricity + Weather + Traffic",
+      "detail": "Hepsi küçük (<1 GB toplam) · TSLib repo / HuggingFace",
+      "url": "https://github.com/thuml/Time-Series-Library"
+     },
+     "baseline": {
+      "name": "TimesNet / PatchTST / iTransformer / DLinear",
+      "code": "thuml/Time-Series-Library (leaderboard repo’da)",
+      "result": "Repo leaderboard’u referans; sıralama veri setine göre değişir"
+     },
+     "target": "Seçilen veri seti × ufuk hücrelerinde leaderboard üzeri",
+     "metric": "MSE / MAE",
+     "strategy": [
+      "Ajan 4 veri setinde 4 baseline’ı tek script’le koşar",
+      "Seri ayrıştırma (trend/seasonal) varyantı",
+      "Patch boyutu/stride + RevIN + kanal-bağımsızlık ızgarası",
+      "Loss kıyası: MAE vs Huber; frekans-alan bileşenleri",
+      "Ensemble + çoklu seed doğrulama"
+     ],
+     "gpu": "Tek 12GB fazlasıyla yeter · Colab/Kaggle çok rahat",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · TSLib",
+     "duration": "2–3 hafta (bir konfig dakikalar–saat)",
+     "difficulty": 1,
+     "publishTarget": "B-tier konferans / SCI dergi",
+     "orchFit": "Çok yüksek"
+    }
+   ]
+  },
+  {
+   "id": "tab",
+   "no": "06",
+   "name": "Tablo Verisi ile Öğrenme",
+   "short": "XGBoost · TabPFN · OpenML",
+   "color": "#e19100",
+   "blurb": "Otorite burada derin öğrenme değil, ağaç modelleri. Default ile ayarlanmış XGBoost arasındaki ~180 Elo’luk uçurum tamamen arama işi — ajan döngüsünün doğrudan kapatabileceği boşluk. CPU’da dakikalar içinde döngü tamamlanır.",
+   "topics": [
+    {
+     "id": "tab-1",
+     "code": "6.1",
+     "title": "Default’tan Zirveye: Orkestrasyon XGBoost’un Optimizasyon Boşluğunu Kapatabilir mi?",
+     "titleEn": "Closing the XGBoost Optimization Gap with Orchestration",
+     "dataset": {
+      "name": "Grinsztajn benchmark’ından 5–8 veri seti",
+      "detail": "OpenML üzerinden · ham arama sonuçları paylaşılmış (pahalı HP araması gerekmez)",
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2022/hash/0378c7692da36807bdec87ab043cdadc-Abstract-Datasets_and_Benchmarks.html"
+     },
+     "baseline": {
+      "name": "Default XGBoost",
+      "code": "xgboost sklearn API, varsayılan parametreler",
+      "result": "TabArena: XGBoost(D) Elo 1229 vs XGBoost(T) 1409"
+     },
+     "target": "Tuned seviyeye yaklaşma eğrisi (Elo/normalize skor)",
+     "metric": "Accuracy / R² + Elo",
+     "strategy": [
+      "Ajan OpenML’den veri setlerini indirir, default XGBoost’u koşar",
+      "Optuna ile bütçe-yönetimli hiperparametre araması",
+      "Ajan-önerili öznitelik mühendisliği turu",
+      "Kategorik kodlama varyantları (one-hot/target/ordinal)",
+      "Bütçe-performans eğrisi makalenin ana figürü olur"
+     ],
+     "gpu": "CPU yeterli · dakikalar/koşu",
+     "system": "Ubuntu 22.04 · Python 3.10 · xgboost/optuna/openml",
+     "duration": "1–2 hafta",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "tab-2",
+     "code": "6.2",
+     "title": "Ağaçları Ne Zaman Geçer? Küçük Veri Setlerinde TabPFN v2 ve ModernNCA’nın Sınırları",
+     "titleEn": "When Do Deep Models Beat Trees? Meta-Learning a Selection Rule",
+     "dataset": {
+      "name": "OpenML <10K örneklik veri setleri",
+      "detail": "Grinsztajn 45-veri seti kümesinin alt kümesi",
+      "url": "https://arxiv.org/html/2506.16791v1"
+     },
+     "baseline": {
+      "name": "Tuned XGBoost",
+      "code": "Grinsztajn ham arama sonuçları referans alınır",
+      "result": "Ağaçlar ~10K örnekte SOTA; ModernNCA Elo 1404, XGBoost(T) 1409"
+     },
+     "target": "“Hangi veri setinde derin model kazanır?” seçim kuralı çıkarmak",
+     "metric": "Veri seti başına normalize skor",
+     "strategy": [
+      "Ajan veri setlerini indirir, XGBoost tuned referansını doğrular",
+      "TabPFN v2 ve ModernNCA koşuları",
+      "Veri seti meta-özellikleri çıkarılır (boyut, dengesizlik, düzensizlik)",
+      "Meta-öğrenme ile model seçim kuralı çıkarımı",
+      "Katkı: seçim kuralının kendisi"
+     ],
+     "gpu": "CPU + hafif GPU · dakikalar/koşu",
+     "system": "Ubuntu 22.04 · Python 3.10 · tabpfn/xgboost/openml",
+     "duration": "2–3 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "tab-3",
+     "code": "6.3",
+     "title": "Foundation Tablo Modelleri Ne Zaman Kazanır? OpenML Suitelerinde TabPFN v2 vs XGBoost/CatBoost",
+     "titleEn": "When Do Foundation Tabular Models Win? TabPFN v2 vs XGBoost/CatBoost on OpenML Suites",
+     "dataset": {
+      "name": "OpenML-CC18 / TabZilla benchmark suite",
+      "detail": "Çok sayıda küçük tablo · OpenML API ile otomatik indirme · açık lisans",
+      "url": "https://github.com/PriorLabs/TabPFN"
+     },
+     "baseline": {
+      "name": "TabPFN v2 vs XGBoost/CatBoost/LightGBM",
+      "code": "PriorLabs/TabPFN + standart GBM kütüphaneleri",
+      "result": "Rejim-bağımlı: küçük tabloda TabPFN, büyüdükçe boosting"
+     },
+     "target": "Karşılaştırma odaklı: hangi rejimde hangi yöntem kazanır analizi",
+     "metric": "Accuracy / AUC / log-loss",
+     "strategy": [
+      "Ajan OpenML suite’i indirir, TabPFN ve GBM baseline’larını koşar",
+      "Feature engineering + kategorik kodlama varyantları",
+      "GBM’de Optuna HP optimizasyonu; TabPFN’de ensembling/context seçimi",
+      "Kalibrasyon ve stacking denemesi",
+      "Kazanma-rejimi karar kuralı makalenin katkısı"
+     ],
+     "gpu": "TabPFN küçük tabloda tek GPU/CPU hızlı · boosting CPU · Colab uygun",
+     "system": "Ubuntu 22.04 · Python 3.10 · tabpfn/xgboost/catboost/openml",
+     "duration": "1–2 hafta (dataset başına dakikalar)",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "tab-4",
+     "code": "6.4",
+     "title": "Stacking mi, Boosting mi? Çok Ajanlı Ensemble Tasarımının CatBoost’a Karşı Sınanması",
+     "titleEn": "Agent-Designed Stacking vs Tuned CatBoost",
+     "dataset": {
+      "name": "Dengesiz ikili sınıflandırma (churn / kredi temerrüdü)",
+      "detail": "OpenML veya Kaggle’dan programatik indirme",
+      "url": "https://arxiv.org/html/2506.16791v1"
+     },
+     "baseline": {
+      "name": "Tuned CatBoost",
+      "code": "catboost + Optuna protokolü",
+      "result": "TabArena veri seti tablolarında CatBoost sık sık lider/ikinci"
+     },
+     "target": "Tuned CatBoost’un AUC/PR-AUC’sunu geçmek",
+     "metric": "AUC / PR-AUC",
+     "strategy": [
+      "Ajan veri setini indirir, CatBoost baseline’ını koşar",
+      "LightGBM + XGBoost + MLP stacking mimarisi",
+      "Olasılık kalibrasyonu (isotonic / Platt)",
+      "Sınıf dengesizliğinde eşik optimizasyonu",
+      "Hedef sızıntısı denetimi ajan tarafından yapılır"
+     ],
+     "gpu": "CPU yeterli · dakikalar–1 saat/koşu",
+     "system": "Ubuntu 22.04 · Python 3.10 · catboost/lightgbm/optuna",
+     "duration": "2–3 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "tab-5",
+     "code": "6.5",
+     "title": "Hiçbir Detektör Kazanmıyorsa: Tablo Anomali Tespitinde Meta-Öznitelik Tabanlı Algoritma Seçimi",
+     "titleEn": "If No Detector Wins: Meta-Feature Based Algorithm Selection for Tabular Anomaly Detection",
+     "dataset": {
+      "name": "ADBench — 57 veri seti",
+      "detail": "30 algoritma × 57 dataset = 98.436 deneylik resmi benchmark (NeurIPS 2022) · repo ile geliyor",
+      "url": "https://github.com/Minqi824/ADBench"
+     },
+     "baseline": {
+      "name": "“En iyi tek algoritma” yaklaşımı",
+      "code": "ADBench (Minqi824/ADBench) + pyod 3.6.5",
+      "result": "ADBench bulgusu: hiçbir denetimsiz yöntem diğerinden istatistiksel olarak üstün değil — tek-algoritma baseline’ı zayıf, fırsat açık"
+     },
+     "target": "Sabit tek algoritmaya karşı veri seti başına doğru detektör seçimi",
+     "metric": "AUC-ROC / AUC-PR (57 veri seti ortalaması)",
+     "strategy": [
+      "Ajan ADBench veri setlerini indirir, en iyi tek-algoritma baseline’ını hesaplar",
+      "Her veri setinden meta-öznitelik çıkarımı (boyut, çarpıklık, anomali oranı, içsel boyut)",
+      "Meta-model: hangi detektörü seçeceğini öğrenen seçici",
+      "Basit ensemble ile karşılaştırma",
+      "Katkı: benchmark’ın kendi negatif bulgusuna doğrudan yanıt — net hikâye"
+     ],
+     "gpu": "YOK — sadece CPU · veri seti başına saniyeler–dakikalar",
+     "system": "Ubuntu 22.04 · Python 3.10 · pyod==3.6.5 + scikit-learn",
+     "duration": "2 hafta (tam matris birkaç saat CPU)",
+     "difficulty": 2,
+     "publishTarget": "Bildiri / workshop",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "tab-6",
+     "code": "6.6",
+     "title": "Ne Kadar Az Denetim Yeter? Anomali Tespitinde %1 Etiket Eşiğinin Yeniden İncelenmesi",
+     "titleEn": "How Little Supervision Is Enough? Revisiting the 1% Label Threshold in Anomaly Detection",
+     "dataset": {
+      "name": "ADBench — 57 veri seti",
+      "detail": "Yarı-denetimli yöntemler dahil 30 algoritma",
+      "url": "https://github.com/Minqi824/ADBench"
+     },
+     "baseline": {
+      "name": "ADBench bulgusu: %1 etiketli anomali",
+      "code": "ADBench yarı-denetimli protokolü",
+      "result": "%1 etiketle çoğu yarı-denetimli yöntem en iyi denetimsizi geçiyor (resmi “key takeaway”)"
+     },
+     "target": "Tek noktayı (%1) eğriye çevirmek: %0,1 → %5 etiket oranı taraması",
+     "metric": "AUC (etiket oranı × yöntem × seed eğrisi)",
+     "strategy": [
+      "Ajan %1 noktasında benchmark bulgusunu doğrular",
+      "Etiket oranı sürekli taraması: %0,1 / %0,5 / %1 / %2 / %5",
+      "Hangi etiketler: rastgele vs aktif öğrenme vs en belirsiz örnekler",
+      "Veri seti özelliklerine göre eşik değişimi analizi",
+      "Katkı: eşik eğrisi + etiket-seçim stratejisi"
+     ],
+     "gpu": "YOK — sadece CPU (çok seed gerekir)",
+     "system": "Ubuntu 22.04 · pyod + scikit-learn",
+     "duration": "2 hafta",
+     "difficulty": 1,
+     "publishTarget": "Bildiri",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "tab-7",
+     "code": "6.7",
+     "title": "Uyumsuzluk Skorunu Seçmek: Tablo Benchmark’larında Konformal Tahmin Yöntemlerinin Ampirik Karşılaştırması",
+     "titleEn": "Choosing the Nonconformity Score: An Empirical Comparison of Conformal Prediction on Tabular Benchmarks",
+     "dataset": {
+      "name": "OpenML / UCI tablo setleri",
+      "detail": "openml ve ucimlrepo paketleriyle otomatik iner",
+      "url": "https://github.com/scikit-learn-contrib/MAPIE"
+     },
+     "baseline": {
+      "name": "MAPIE standart split-conformal",
+      "code": "mapie 1.5.0 · alternatifler: crepes, puncc",
+      "result": "Konformal tahminde kapsama teorik garantili — yarış verimlilikte (küme boyutu)"
+     },
+     "target": "Aynı kapsama garantisinde en küçük tahmin kümesi",
+     "metric": "Kapsama (coverage) + ortalama küme boyutu",
+     "strategy": [
+      "Ajan veri setlerini indirir, MAPIE split-conformal baseline’ını koşar",
+      "Nonconformity skorları: APS / RAPS / LAC(THR) karşılaştırması",
+      "Kalibrasyon seti boyutu duyarlılığı",
+      "Sınıf-koşullu kapsama ve dağılım kayması altında geçerlilik",
+      "Katkı: kapsama-boyut ödünleşim haritası (dürüst ve net hedef)"
+     ],
+     "gpu": "YOK — veri seti başına saniyeler · tam çalışma bir öğleden sonra",
+     "system": "Ubuntu 22.04 · mapie==1.5.0 + scikit-learn + crepes (kurulum çok kolay)",
+     "duration": "1 hafta",
+     "difficulty": 2,
+     "publishTarget": "Bildiri (konformal tahmin yükselen alan)",
+     "orchFit": "Çok yüksek"
+    }
+   ]
+  },
+  {
+   "id": "graph",
+   "no": "07",
+   "name": "Graf Öğrenme",
+   "short": "Planetoid · OGB",
+   "color": "#8b8bef",
+   "blurb": "En ucuz deney döngüsü: Cora/CiteSeer/PubMed CPU’da saniyeler içinde eğitilir, PyG otomatik indirir ve OGB leaderboard’u hazırdır. Küçük graf’larda 100 seed ortalaması raporlama disiplini şart.",
+   "topics": [
+    {
+     "id": "graph-1",
+     "code": "7.1",
+     "title": "GCN’i İki Satırla Geçmek: Cora’da Etiket Yayılımı ve Mimari Ablasyon",
+     "titleEn": "Label Propagation and C&S over GCN on Planetoid",
+     "dataset": {
+      "name": "Cora / CiteSeer / PubMed",
+      "detail": "Cora: 2.708 düğüm · PyG Planetoid otomatik indirir · açık lisans",
+      "url": "https://grlearning.github.io/papers/103.pdf"
+     },
+     "baseline": {
+      "name": "GCN (2 katman)",
+      "code": "PyTorch Geometric hazır eğitim döngüsü",
+      "result": "Cora 81,5 · CiteSeer 70,3 · PubMed 79,0 test doğruluğu"
+     },
+     "target": "Cora’da 81,5 üzeri (C&S/etiket yayılımı ile ulaşılabilir)",
+     "metric": "Accuracy (100 seed ortalaması zorunlu)",
+     "strategy": [
+      "Ajan Planetoid’i indirir, GCN baseline’ını koşar",
+      "Etiket yayılımı + Correct&Smooth son-işlemi",
+      "Jumping Knowledge / residual bağlantılar",
+      "Dropout/lr/weight-decay araması",
+      "100 seed ortalama ± std raporlaması"
+     ],
+     "gpu": "CPU bile yeter · saniyeler–dakikalar/koşu",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · torch-geometric (wheel eşleşmesine dikkat)",
+     "duration": "1 hafta",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "graph-2",
+     "code": "7.2",
+     "title": "GCN’in Ötesi: Cora/Citeseer/ogbn-arxiv’te Regülarizasyon ve Mimari Seçimler",
+     "titleEn": "Beyond GCN: Regularization and Architecture Choices for Node Classification",
+     "dataset": {
+      "name": "Planetoid + ogbn-arxiv",
+      "detail": "ogbn-arxiv: ~169k düğüm · PyG/OGB otomatik indirir · leaderboard açık",
+      "url": "https://github.com/pyg-team/pytorch_geometric"
+     },
+     "baseline": {
+      "name": "GCN / GAT / GraphSAGE",
+      "code": "pyg-team/pytorch_geometric + OGB leaderboard",
+      "result": "GAT: Cora 83,0 / CiteSeer 72,5 / PubMed 79,0; OGB leaderboard referansları"
+     },
+     "target": "Küçük graf’ta regülarizasyonla, büyük graf’ta ölçeklemeyle leaderboard kazancı",
+     "metric": "Accuracy",
+     "strategy": [
+      "Ajan veri setlerini indirir, GCN/GAT/GraphSAGE baseline’larını koşar",
+      "DropEdge + normalizasyon varyantları",
+      "Daha derin GNN: residual + jumping knowledge ablasyonu",
+      "GAT attention head sayısı taraması",
+      "ogbn-arxiv’de ölçekleme teknikleri (neighbor sampling)"
+     ],
+     "gpu": "Planetoid: 8–12GB (hatta CPU) · ogbn-arxiv: 12–24GB · Colab uygun",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · torch-geometric + ogb",
+     "duration": "1–2 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / SCI-E / OGB leaderboard",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "graph-3",
+     "code": "7.3",
+     "title": "Topoloji-Koruyucu Kenar Bozulumu ve Yüksek-Mertebeli Komşu Toplama: Over-Smoothing’e Karşı GCN İyileştirmesi",
+     "titleEn": "Topology-Preserving Edge Perturbation and High-Order Neighbor Aggregation in GCNs",
+     "dataset": {
+      "name": "OGBN-Arxiv (alıntı ağı) + Elliptic Bitcoin (kara para aklama grafı)",
+      "detail": "ogbn-arxiv: ~169k düğüm · Elliptic: ~203k düğüm / 166 kenar tipi, 2 sınıf · PyG/OGB otomatik indirir",
+      "url": "https://ogb.stanford.edu/docs/nodeprop/"
+     },
+     "baseline": {
+      "name": "Standart GCN ve GAT",
+      "code": "pyg-team/pytorch_geometric örnekleri + OGB leaderboard",
+      "result": "ogbn-arxiv: GCN ~%71–72 test acc (OGB leaderboard); derinleştikçe over-smoothing ile düşüş"
+     },
+     "target": "Aynı katman bütçesinde GCN/GAT üzeri; derin varyantta (8–16 katman) over-smoothing’in kırılması",
+     "metric": "Accuracy (ogbn-arxiv) / F1 (Elliptic, azınlık sınıfı)",
+     "strategy": [
+      "Ajan veri setlerini indirir, GCN/GAT baseline’ını koşar ve OGB leaderboard ile teyit eder",
+      "PairNorm / DropEdge (rastgele kenar budama) enjeksiyonu — over-smoothing ablasyonu",
+      "Yüksek-mertebeli komşu toplama (Jumping Knowledge / k-hop) varyantı",
+      "Elliptic’te heterofili uyarlaması: komşuluk derecesine göre dinamik ağırlıklandırma",
+      "Katman sayısı × doğruluk eğrisi makalenin ana figürü (2/4/8/16 katman)"
+     ],
+     "gpu": "ogbn-arxiv: 12–24GB · Elliptic: 12GB yeter · Colab uygun",
+     "system": "Ubuntu 22.04 LTS · CUDA 12.1 · torch-geometric + ogb (wheel eşleşmesine dikkat)",
+     "duration": "2–3 hafta (baseline ~40 dk, iyileştirme deneyleri 2–3 saat)",
+     "difficulty": 2,
+     "publishTarget": "Workshop / SCI-E / OGB leaderboard",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "graph-4",
+     "code": "7.4",
+     "title": "Heterofili İçin Skip Connection Yeterli mi? Eleştirel Bakış İddiasının Yeni Mimarilere Genişletilmesi",
+     "titleEn": "Are Skip Connections All You Need for Heterophily? Extending the Critical Look",
+     "dataset": {
+      "name": "5 heterofilik graf (roman-empire, amazon-ratings, minesweeper, tolokers, questions)",
+      "detail": "10k–49k düğüm · repo’nun data klasöründen doğrudan iner (hesap gerekmez) · yüklerken ToUndirected() şart",
+      "url": "https://github.com/yandex-research/heterophilous-graphs"
+     },
+     "baseline": {
+      "name": "ResNet+standart GNN baseline’ları (ICLR 2023)",
+      "code": "yandex-research/heterophilous-graphs (run_all_experiments.sh hazır)",
+      "result": "Kritik bulgu: skip connection + LayerNorm’lu standart GNN’ler özel modelleri neredeyse her zaman geçiyor"
+     },
+     "target": "İddianın yeni mimarilerde (graph transformer, GraphSAGE varyantları) doğrulanması/genişletilmesi",
+     "metric": "Accuracy (dataset başına, repo protokolü)",
+     "strategy": [
+      "Ajan 5 grafı indirir, repo baseline’larını koşar ve tabloyu yeniden üretir",
+      "Normalizasyon tipi: LayerNorm vs BatchNorm vs PairNorm",
+      "Derinlik ölçekleme + skip tipi (residual vs dense vs jumping knowledge)",
+      "Graph transformer varyantında iddianın sınanması",
+      "Katkı: reprodüksiyon + genişletme (bildiri için klasik format)"
+     ],
+     "gpu": "8GB yeter; küçük graflar CPU’da bile · Colab çok rahat",
+     "system": "Ubuntu 22.04 · DGL (repo bunu kullanıyor) veya PyG’ye port (port etmek küçük katkı olur)",
+     "duration": "1–2 hafta (dataset başına dakikalar)",
+     "difficulty": 2,
+     "publishTarget": "Bildiri / workshop",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "graph-5",
+     "code": "7.5",
+     "title": "MLP, Etiket Yayılımı ve Öznitelik Düzleştirme: Heterofilik Graflarda Güçlü Basit Baseline’lar",
+     "titleEn": "MLP, Label Propagation and Feature Smoothing: Strong Simple Baselines for Heterophilous Graphs",
+     "dataset": {
+      "name": "Aynı 5 heterofilik graf",
+      "detail": "Homofili 0,05 (roman-empire) → graf yapısı zararlı bile olabilir",
+      "url": "https://github.com/yandex-research/heterophilous-graphs"
+     },
+     "baseline": {
+      "name": "Repo’nun GNN’leri",
+      "code": "yandex-research/heterophilous-graphs",
+      "result": "Graf kullanmayan MLP’nin bazı grafllarda GNN’e yakın/üstün olduğu gözlemi"
+     },
+     "target": "“Graf yapısı gerçekten gerekli mi?” sorusuna veri seti bazında yanıt",
+     "metric": "Accuracy (MLP vs LP vs GNN)",
+     "strategy": [
+      "Ajan GNN baseline tablosunu yeniden üretir",
+      "Grafı hiç kullanmayan MLP koşusu",
+      "Label propagation + Correct & Smooth son-işlemi",
+      "Komşu özniteliklerini elle birleştirme (feature smoothing)",
+      "Katkı: basit-baseline savunması — kolay savunulabilir tez"
+     ],
+     "gpu": "CPU yeterli · dakikalar",
+     "system": "Ubuntu 22.04 · torch + scikit-learn (MLP/LP için)",
+     "duration": "1 hafta",
+     "difficulty": 1,
+     "publishTarget": "Bildiri",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "graph-6",
+     "code": "7.6",
+     "title": "Hangi Homofili Ölçüsü GNN Performansını Öngörüyor? Ampirik Bir Çalışma",
+     "titleEn": "Which Homophily Measure Predicts GNN Performance? An Empirical Study",
+     "dataset": {
+      "name": "5 heterofilik graf + Planetoid (Cora/CiteSeer/PubMed)",
+      "detail": "PyG otomatik indirir · repo’nun adjusted homophily ve label informativeness değerleri referans",
+      "url": "https://github.com/yandex-research/heterophilous-graphs"
+     },
+     "baseline": {
+      "name": "Repo’nun raporladığı homofili metrikleri",
+      "code": "kenar homofilisi, adjusted homophily, label informativeness (tabloda mevcut)",
+      "result": "Metrik-performans ilişkisi net değil — ölçülecek açık"
+     },
+     "target": "GNN–MLP performans farkını en iyi öngören metriğin bulunması",
+     "metric": "Korelasyon (homofili ölçüsü vs performans farkı)",
+     "strategy": [
+      "Ajan tüm graflarda farklı homofili ölçülerini hesaplar",
+      "GNN–MLP performans farkıyla korelasyon analizi",
+      "Sentetik graf üreterek homofiliyi sürekli değiştirme",
+      "Öngörücü metrik üzerinden “GNN kullanmalı mı?” karar kuralı",
+      "Katkı: metodolojik ve temiz bir değerlendirme çalışması"
+     ],
+     "gpu": "CPU · dakikalar",
+     "system": "Ubuntu 22.04 · torch-geometric + networkx + scikit-learn",
+     "duration": "1 hafta",
+     "difficulty": 1,
+     "publishTarget": "Bildiri",
+     "orchFit": "Çok yüksek"
+    }
+   ]
+  },
+  {
+   "id": "slam",
+   "no": "07b",
+   "name": "Görsel-Eylemsel Odometri & SLAM",
+   "short": "EuRoC · ORB-SLAM3 · evo",
+   "color": "#7b2d8b",
+   "blurb": "VIO/SLAM’de de “indir → koş → ölç → manipüle et” döngüsü kurulabilir: EuRoC MAV rosbag’leri doğrudan iner, ORB-SLAM3 tek komutla koşar ve evo paketi ATE/RPE metriklerini otomatik üretir. Otorite çok güçlü (ORB-SLAM3 stereo-inertial ort. 0,035 m), ama ön-uc manipülasyonlarında kanıtlanmış kazanç marjı var.",
+   "topics": [
+    {
+     "id": "slam-1",
+     "code": "7b.1",
+     "title": "EuRoC MAV’de Görsel-Eylemsel Odometri: ORB-SLAM3 Ön-ucunu Öğrenen Özniteliklerle Güçlendirmek",
+     "titleEn": "Strengthening the ORB-SLAM3 Front-End with Learned Features on the EuRoC MAV Benchmark",
+     "dataset": {
+      "name": "EuRoC MAV Dataset",
+      "detail": "11 sekans (MH01–05, V101–103, V201–203) · stereo 20 Hz + IMU 200 Hz + ground-truth · ASL’den doğrudan iner · toplam ~birkaç GB/sekans",
+      "url": "https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets"
+     },
+     "baseline": {
+      "name": "ORB-SLAM3 (stereo-inertial)",
+      "code": "UZ-SLAMLab/ORB_SLAM3 + evo (MichaelGrupp/evo) ile evo_ape değerlendirmesi",
+      "result": "EuRoC ort. RMS ATE 0,035 m (makale Tablo II, 10 koşu medyanı); VINS-Fusion/Mono daha yüksek hata"
+     },
+     "target": "Zor sekanslarda (V102, V201, V203) ATE RMSE’yi düşürmek; literatürde ön-uc iyileştirmesi %19’a varan kazanç raporluyor",
+     "metric": "RMS ATE + RPE (evo ile, SE(3) hizalama)",
+     "strategy": [
+      "Ajan EuRoC rosbag’lerini indirir, ORB-SLAM3 stereo-inertial baseline’ını koşar, evo_ape ile ATE/RPE’yi JSON/CSV’ye kaydeder",
+      "Grid-tabanlı keypoint seçimi (özelliklerin uzamsal dağılımını düzeltir)",
+      "İleri-geri optik akış tutarlılık filtresi (bulanıklık/oklüzyon kaynaklı kararsız noktaları eler)",
+      "Öğrenen ön-uc varyantı: ORB yerine SuperPoint + LightGlue eşleştirme",
+      "IMU başlatma ve kare/özellik sayısı hiperparametre ızgarası; 5+ koşu medyanı ile raporlama"
+     ],
+     "gpu": "Klasik varyant CPU’da gerçek zamanlı · öğrenen ön-uc için tek 12GB GPU yeter",
+     "system": "Ubuntu 22.04 · ROS (Noetic/ROS2) veya ROS’suz derleme · C++17 · OpenCV · evo (pip) — kurulum en ağır kısım",
+     "duration": "4+ hafta (kurulum ~1 hafta ayırın)",
+     "difficulty": 3,
+     "publishTarget": "Robotik workshop / SCI-E dergi (VIO uygulama)",
+     "orchFit": "Orta"
+    }
+   ]
+  },
+  {
+   "id": "rec",
+   "no": "08",
+   "name": "Öneri Sistemleri",
+   "short": "RecBole Ekosistemi",
+   "color": "#6b4a9e",
+   "blurb": "RecBole 73 modeli tek API ile çalıştırır, veri setlerini otomatik indirir ve yerleşik Bayesian araması vardır — orkestranın “indir → koş → kaydet” döngüsü kutu içinden çıkar.",
+   "topics": [
+    {
+     "id": "rec-1",
+     "code": "8.1",
+     "title": "Varsayılan Ayarlarla Kim Kazanır? MovieLens-100K’da BPR’dan LightGCN’e Orkestrasyon Yolculuğu",
+     "titleEn": "From BPR to LightGCN: An Orchestrated Sweep on MovieLens-100K",
+     "dataset": {
+      "name": "MovieLens-100K",
+      "detail": "944 kullanıcı, 100K etkileşim · RecBole otomatik indirir",
+      "url": "https://recbole.io/docs/get_started/started/general.html"
+     },
+     "baseline": {
+      "name": "BPR (RecBole quick-start)",
+      "code": "run_recbole(model='BPR', dataset='ml-100k')",
+      "result": "Test Recall@10 0,2523 · NDCG@10 0,292 (resmi doküman)"
+     },
+     "target": "BPR’ı Recall@10’da anlamlı marjla geçmek",
+     "metric": "Recall@10 / NDCG@10 (tam sıralama)",
+     "strategy": [
+      "Ajan RecBole ile BPR baseline’ını koşar, sonucu kaydeder",
+      "Embedding boyutu + negatif örnekleme ızgarası",
+      "ItemKNN → NeuMF → LightGCN sıralı denemesi",
+      "RecBole yerleşik Bayesian araması",
+      "5 seed ortalaması + güven aralığı raporu"
+     ],
+     "gpu": "CPU/Colab · dakikalar/koşu",
+     "system": "Ubuntu 22.04 · Python 3.10 · recbole",
+     "duration": "1–2 hafta",
+     "difficulty": 1,
+     "publishTarget": "Workshop / SCI-E dergi",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "rec-2",
+     "code": "8.2",
+     "title": "Sıralı Öneride Protokol Etkisi: MovieLens-1M’de SASRec’in Tekrarlanabilirliği ve Ötesi",
+     "titleEn": "Evaluation-Protocol Effects on SASRec Reproducibility",
+     "dataset": {
+      "name": "MovieLens-1M",
+      "detail": "6.040 kullanıcı, ~1M etkileşim · RecBole",
+      "url": "https://recbole.io/"
+     },
+     "baseline": {
+      "name": "SASRec (RecBole implementasyonu)",
+      "code": "recbole sequential modelleri",
+      "result": "NDCG@10 0,350 (RecBole) vs 0,348 (orijinal makale)"
+     },
+     "target": "0,350 üzeri NDCG@10 + protokol duyarlılık analizi",
+     "metric": "NDCG@10 / HR@10",
+     "strategy": [
+      "Ajan MovieLens-1M’i indirir, SASRec’i koşar",
+      "Tam-sıralama vs örneklenmiş negatif değerlendirme ablasyonu",
+      "Dizi uzunluğu taraması",
+      "Leave-one-out vs zamansal bölme kıyası",
+      "Katkı: protokolün sonuca etkisinin ölçümü"
+     ],
+     "gpu": "Colab T4 · ~30–60 dk/koşu",
+     "system": "Ubuntu 22.04 · Python 3.10 · recbole",
+     "duration": "2–3 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / B-tier",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "rec-3",
+     "code": "8.3",
+     "title": "Karmaşıklık Gerekli mi? MovieLens’te Saf GNN Mimarilerinin Kıyası: LightGCN vs GAT vs SimpleX",
+     "titleEn": "Is Complexity Necessary? Pure GNN Architectures: LightGCN vs Attention-Based GNNs",
+     "dataset": {
+      "name": "MovieLens-1M",
+      "detail": "GNN tabanlı modellerle · PyG veya RecBole",
+      "url": "https://recbole.io/"
+     },
+     "baseline": {
+      "name": "GAT / SimpleX / karmaşık GNN’ler",
+      "code": "PyG örnekleri veya RecBole",
+      "result": "LightGCN en yüksek Recall@10; GAT/HGT LightGCN’i geçemiyor"
+     },
+     "target": "Sadeleştirilmiş modelle LightGCN seviyesi veya üstü",
+     "metric": "Recall@10",
+     "strategy": [
+      "Ajan LightGCN, GAT ve SimpleX baseline’larını aynı split ile koşar",
+      "Katman sayısı / propagasyon ablasyonu",
+      "Aşırı öğrenme kontrolü: dropout taraması",
+      "Katman başına katkı: yayılım derinliği × doğruluk eğrisi",
+      "Katkı: “sade > karmaşık” tezinin analizi (salt GNN karşılaştırması — LLM bileşeni yok)"
+     ],
+     "gpu": "Colab T4 · ~1 saat/koşu",
+     "system": "Ubuntu 22.04 · Python 3.10 · recbole / torch-geometric",
+     "duration": "3–4 hafta",
+     "difficulty": 3,
+     "publishTarget": "Workshop / B-tier",
+     "orchFit": "Yüksek"
+    }
+   ]
+  },
+  {
+   "id": "rag",
+   "no": "09",
+   "name": "RAG ve LLM Sistemleri",
+   "short": "Retrieval + Değerlendirme",
+   "color": "#9c4f8f",
+   "blurb": "Deney nesnesi de aracı da dil modeli: orkestranın LLM kimliğiyle en doğrudan örtüşen alan. RAGBench ve BERGEN ile uçtan uca benchmark altyapısı hazır; LLM API bütçesi planlanmalı.",
+   "topics": [
+    {
+     "id": "rag-1",
+     "code": "9.1",
+     "title": "Önce Getir, Sonra Üret: NQ Test Diliminde BM25 Baseline’ını Hibrit Retrieval ile Geçmek",
+     "titleEn": "Hybrid Retrieval over BM25 on a 1,000-Query NQ Test Slice",
+     "dataset": {
+      "name": "Natural Questions — 1.000 sorguluk sabit-seed test dilimi",
+      "detail": "BERGEN kütüphanesi ile uçtan uca benchmark · tam BEIR indeksleme (15–20 GB RAM) yerine yalnızca NQ test dilimi kullanılır — sabit seed ile dondurulur",
+      "url": "https://github.com/naver/bergen"
+     },
+     "baseline": {
+      "name": "BM25 + doğrudan üretim",
+      "code": "BERGEN tek-aşamalı RAG konfigürasyonu",
+      "result": "NQ: BM25 EM %14,9 vs DPR+R+G ~%28–31"
+     },
+     "target": "1.000 sorguluk dilimde BM25 baseline’ının EM/nDCG’sini hibrit ile aşmak",
+     "metric": "EM + nDCG@10",
+     "strategy": [
+      "Ajan veri setini ve BERGEN’i kurar, 1.000 sorguluk sabit-seed test dilimini dondurur, BM25 baseline’ını koşar",
+      "Chunk boyutu / overlap taraması",
+      "BM25 + dense (DPR/Contriever) hibrit birleşimi",
+      "Cross-encoder reranker ekleme",
+      "Sorgu genişletme (HyDE) varyantı"
+     ],
+     "gpu": "LLM API bütçesi gerekir · yerel 8B model alternatifi",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · BERGEN bağımlılıkları",
+     "duration": "3–4 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / B-tier",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "rag-2",
+     "code": "9.2",
+     "title": "RAG’in Kör Noktası: RAGBench Mini-Eval Alt Kümesinde Bağlılık (Adherence) Hatalarının Azaltılması",
+     "titleEn": "Reducing Adherence Failures on a 300-Sample RAGBench Mini-Eval",
+     "dataset": {
+      "name": "RAGBench (Galileo) — 300 soruluk mini-eval alt kümesi",
+      "detail": "Tam set 100K örnek ama üretim denemeleri yalnızca 300 rastgele soruda (API faturası/rate-limit önlemi) · HF: rungalileo/ragbench",
+      "url": "https://arxiv.org/abs/2407.11005"
+     },
+     "baseline": {
+      "name": "Temel RAG boru hattı (yerel 8B model)",
+      "code": "Llama-3-8B / Qwen2.5-7B ile vLLM üzerinde üretim — harici API yok",
+      "result": "RAGBench referans üretim dağılımı (GPT-3.5/Haiku) tablodan referans alınır; kendi üretiminiz rakip"
+     },
+     "target": "300 örneklik alt kümede TRACe adherence/bütünlükte ölçülebilir iyileşme",
+     "metric": "TRACe (utilization, relevance, adherence, completeness)",
+     "strategy": [
+      "Ajan RAGBench’ten sabit-seed 300 soruluk alt kümeyi çıkarır ve dondurur",
+      "Yerel 8B modelle temel boru hattını koşar (tek geçiş ~1 saat T4)",
+      "Bağlam sıkıştırma (context compression) varyantı",
+      "Alıntı-zorunlu (citation-forced) prompt tasarımı",
+      "Cevap-doğrulama ajanı ekleme; öncesi/sonrası TRACe kıyası"
+     ],
+     "gpu": "Colab T4 + yerel 8B model (harici API kullanılmaz)",
+     "system": "Ubuntu 22.04 · Python 3.10 · ragbench + vLLM",
+     "duration": "3–4 hafta",
+     "difficulty": 3,
+     "publishTarget": "Workshop / B-tier",
+     "orchFit": "Orta"
+    },
+    {
+     "id": "rag-3",
+     "code": "9.3",
+     "title": "Jüriyi Kim Denetler? İnce Ayarlı Küçük Modeller vs LLM-as-Judge, RAG Değerlendirmesinde",
+     "titleEn": "Who Judges the Judge? Fine-Tuned Small Models vs LLM-as-Judge",
+     "dataset": {
+      "name": "RAGBench train/dev/test bölünmeleri",
+      "detail": "78K eğitim / 12K dev / 11K test · TRACe etiketli",
+      "url": "https://arxiv.org/abs/2407.11005"
+     },
+     "baseline": {
+      "name": "LLM-as-judge (sıfır-atış)",
+      "code": "GPT sınıfı değerlendirici promptları",
+      "result": "RAGBench bulgusu: LLM jüriler fine-tuned RoBERTa’yı geçemiyor"
+     },
+     "target": "İnsan etiketiyle korelasyonda LLM jüriyi geçmek",
+     "metric": "Korelasyon (insan etiketiyle) + sınıflandırma F1",
+     "strategy": [
+      "Ajan RAGBench etiketlerini indirir, LLM jüri baseline’ını koşar",
+      "RoBERTa fine-tuning (TRACe etiket tahmini)",
+      "Prompt varyantları ve jüri-ensembling",
+      "Küçük model + LLM hibrit değerlendirici tasarımı",
+      "Katkı: değerlendirici güvenilirliğinin sistematik ölçümü"
+     ],
+     "gpu": "Colab T4 + sınırlı LLM API",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · transformers + LLM API",
+     "duration": "3–4 hafta",
+     "difficulty": 3,
+     "publishTarget": "Workshop / B-tier",
+     "orchFit": "Orta"
+    }
+   ]
+  },
+  {
+   "id": "rl",
+   "no": "10",
+   "name": "Pekiştirmeli Öğrenme & Robotik",
+   "short": "MuJoCo · D4RL",
+   "color": "#d95f02",
+   "blurb": "Stable-Baselines3 + RL-Zoo ve CORL tek-komut eğitim/eval sağlar; simülatör “veri seti” olduğu için indirme maliyeti yoktur. Kural: RL varyansı yüksektir — tek seed ile “geçtim” iddiası geçersiz, çoklu seed zorunlu.",
+   "topics": [
+    {
+     "id": "rl-1",
+     "code": "10.1",
+     "title": "Örnek-Verimli Sürekli Kontrol: Gymnasium MuJoCo’da Hiperparametre ve Mimari Çalışması",
+     "titleEn": "Sample-Efficient Continuous Control: Hyperparameter and Architecture Study on Gymnasium MuJoCo",
+     "dataset": {
+      "name": "Yok (simülatör): MuJoCo HalfCheetah / Hopper / Walker2d",
+      "detail": "Gymnasium + mujoco pip ile kurulur · veri indirme gerektirmez",
+      "url": "https://github.com/DLR-RM/stable-baselines3"
+     },
+     "baseline": {
+      "name": "Stable-Baselines3 + RL Baselines3 Zoo (tuned HP)",
+      "code": "DLR-RM/stable-baselines3 + rl-baselines3-zoo",
+      "result": "Zoo referans skorları mevcut (episodic return)"
+     },
+     "target": "Zoo’nun tuned skorlarını aynı adım bütçesinde geçmek",
+     "metric": "Episodic return (çoklu seed zorunlu)",
+     "strategy": [
+      "Ajan Zoo tuned baseline’ını koşar ve referans skoru kaydeder",
+      "Optuna ile hiperparametre optimizasyonu",
+      "SAC vs PPO vs TD3 algoritma kıyası",
+      "Network genişliği/derinliği + reward normalization",
+      "Çoklu seed (en az 5–10) ile istatistiksel doğrulama"
+     ],
+     "gpu": "MuJoCo çoğunlukla CPU-bağımlı · tek GPU + çok çekirdek yeter · Colab mümkün",
+     "system": "Ubuntu 22.04 · Python 3.10 · gymnasium/mujoco/SB3/sb3-contrib/optuna",
+     "duration": "3–4 hafta (~1M adım/ortam saatler sürer)",
+     "difficulty": 2,
+     "publishTarget": "Workshop / B-tier",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "rl-2",
+     "code": "10.2",
+     "title": "Offline RL Yeniden: D4RL’de Regülarizasyon ve Ensemble Critic’ler",
+     "titleEn": "Revisiting Offline RL: Regularization and Ensemble Critics on D4RL",
+     "dataset": {
+      "name": "D4RL (MuJoCo locomotion: medium/expert)",
+      "detail": "halfcheetah/hopper/walker · küçük-orta boyut · D4RL/Minari ile iner",
+      "url": "https://github.com/corl-team/CORL"
+     },
+     "baseline": {
+      "name": "CORL (CQL / IQL / TD3+BC)",
+      "code": "corl-team/CORL tek-dosya implementasyonlar + raporlanan skorlar",
+      "result": "CORL’un raporlanan normalized score tablosu referans"
+     },
+     "target": "Seçilen ortamda normalized score kazancı",
+     "metric": "Normalized score (çoklu seed)",
+     "strategy": [
+      "Ajan D4RL veri setlerini indirir, CORL baseline’ını koşar",
+      "Ensemble critics varyantı",
+      "Conservative regularization katsayısı ayarı",
+      "Layer normalization + policy constraint kıyası",
+      "Çoklu seed ile güven aralıklı raporlama"
+     ],
+     "gpu": "Tek 12GB fazlasıyla yeter · Colab uygun",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · gymnasium/d4rl(minari) — bağımlılıklar nazik",
+     "duration": "3–4 hafta (bir koşu birkaç saat)",
+     "difficulty": 2,
+     "publishTarget": "Workshop / B-tier / konferans",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "rl-3",
+     "code": "10.3",
+     "title": "MinAtar’da Keşif Yeniden: Sabit Bütçe Altında ε-Greedy, Noisy Nets ve Sayım-Tabanlı Bonuslar",
+     "titleEn": "Exploration Revisited on MinAtar: ε-Greedy, Noisy Nets and Count-Based Bonuses under a Fixed Budget",
+     "dataset": {
+      "name": "MinAtar simülatörü (5 oyun: asterix, breakout, freeway, seaquest, space_invaders)",
+      "detail": "10×10 ızgara durum gösterimi · pip install minatar — indirme derdi sıfır · CPU’da döner",
+      "url": "https://github.com/kenjyoung/MinAtar"
+     },
+     "baseline": {
+      "name": "Repo’nun hazır DQN örneği + random policy",
+      "code": "kenjyoung/MinAtar examples (DQN ve AC_lambda repo içinde)",
+      "result": "Random referans: breakout 0,5±0,023 (resmi doğrulama komutu)"
+     },
+     "target": "Sabit adım bütçesinde hazır DQN baseline’ının üzeri ortalama return",
+     "metric": "Average return (en az 5 seed, ort ± std zorunlu)",
+     "strategy": [
+      "Ajan MinAtar’ı kurar, DQN baseline’ını ve random referansı koşar",
+      "ε programı taraması; Noisy Networks varyantı",
+      "Sayım-tabanlı bonus (10×10 ızgarada gerçekten uygulanabilir — MinAtar’a özgü açı)",
+      "Entropi bonusu ablasyonu",
+      "5 oyun × 5 seed paralel CPU koşumu (bir gecede biter)"
+     ],
+     "gpu": "GEREKMİYOR — çok çekirdekli CPU yeterli · ajan 8–16 paralel iş koşabilir",
+     "system": "Ubuntu 22.04 · Python 3 · minatar==1.0.15 + torch (2023 paketi — yeni torch ile uyum ilk iş test edilmeli)",
+     "duration": "2–3 hafta (oyun başına birkaç saat CPU, paralelde bir gece)",
+     "difficulty": 2,
+     "publishTarget": "Bildiri / workshop",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "rl-4",
+     "code": "10.4",
+     "title": "MinAtar’da Örnek-Verimli DQN: Replay Oranı ve Hedef Ağ Güncellemelerinin Ablasyonu",
+     "titleEn": "Sample-Efficient DQN on MinAtar: An Ablation of Replay Ratio and Target Network Updates",
+     "dataset": {
+      "name": "MinAtar simülatörü",
+      "detail": "pip install minatar",
+      "url": "https://github.com/kenjyoung/MinAtar"
+     },
+     "baseline": {
+      "name": "Repo’nun DQN örneği",
+      "code": "kenjyoung/MinAtar examples/DQN",
+      "result": "Varsayılan replay ratio ve hedef ağ ayarları referans"
+     },
+     "target": "Aynı çevre adımı bütçesinde daha yüksek return (örnek verimliliği)",
+     "metric": "Return vs çevre adımı eğrisi (5 seed)",
+     "strategy": [
+      "Ajan DQN baseline’ını koşar ve öğrenme eğrisini kaydeder",
+      "Replay ratio (UTD) artırma; aşırı UTD’de çöküş gözlemi",
+      "Katman normalizasyonu ile çöküşün önlenmesi",
+      "n-step return + prioritized replay varyantları",
+      "Hedef ağ güncelleme sıklığı ızgarası"
+     ],
+     "gpu": "CPU yeterli",
+     "system": "Ubuntu 22.04 · minatar + torch",
+     "duration": "2–3 hafta (paralel koşumla bir gece)",
+     "difficulty": 2,
+     "publishTarget": "Bildiri",
+     "orchFit": "Yüksek"
+    },
+    {
+     "id": "rl-5",
+     "code": "10.5",
+     "title": "DQN mi Aktör-Kritik mi? MinAtar’da Eşit-Çabalı Hiperparametre ile Adil Bütçe Karşılaştırması",
+     "titleEn": "A Matched-Budget Comparison of Value-Based and Actor-Critic Methods on MinAtar",
+     "dataset": {
+      "name": "MinAtar simülatörü",
+      "detail": "İki yöntem de repo’da hazır: DQN ve AC_lambda — nadir kolaylık",
+      "url": "https://github.com/kenjyoung/MinAtar"
+     },
+     "baseline": {
+      "name": "DQN vs AC_lambda (repo örnekleri)",
+      "code": "kenjyoung/MinAtar examples",
+      "result": "RL karşılaştırmalarındaki en yaygın hata: eşitsiz hiperparametre çabası — düzeltilecek açık"
+     },
+     "target": "Eşit Optuna bütçesiyle ayarlanmış iki yöntemin adil sıralaması",
+     "metric": "Average return (5+ seed, güven aralıklı)",
+     "strategy": [
+      "Ajan iki hazır örneği varsayılan ayarlarla koşar",
+      "Ağ boyutu ve çevre adımı bütçesini eşitler",
+      "Her iki yöntem için eşit çabayla Optuna (v5) hiperparametre araması",
+      "Tuned-vs-default kazancının yöntem farkına oranı analizi",
+      "Katkı: adil protokol — “karşılaştırma metodolojisi” bildirisi"
+     ],
+     "gpu": "CPU · Optuna paralel koşum ajan için ideal",
+     "system": "Ubuntu 22.04 · minatar + torch + optuna==5.0.0 (v5 major — pinle)",
+     "duration": "2–3 hafta (saatler–bir gece koşumlar)",
+     "difficulty": 2,
+     "publishTarget": "Bildiri",
+     "orchFit": "Yüksek"
+    }
+   ]
+  },
+  {
+   "id": "agentic",
+   "no": "11",
+   "name": "Otonom Ajanlar & Akıl Yürütme",
+   "short": "Multi-Agent Debate · Self-Refinement",
+   "color": "#c41e3a",
+   "blurb": "LLM’leri sadece model değil, otonom problem çözen ajanlar olarak konumlandıran en güncel alan — üstelik deney nesnesi doğrudan dersin orkestrasının kendisi. GPU gereksinimi düşük: API veya Ollama/vLLM üzerinde 7–8B yerel model yeterli; benchmark koşumu paralel worker ile 1–2 saat. Tam masa başı.",
+   "topics": [
+    {
+     "id": "agentic-1",
+     "code": "11.1",
+     "title": "Tartışma ile Güçlendirilmiş Çok-Ajanlı Uzlaşı: Tek-Ajanlı Sistemlere Karşı Karmaşık Akıl Yürütme",
+     "titleEn": "Debate-Enhanced Multi-Agent Consensus: Improving Complex Reasoning over Single-Agent Systems",
+     "dataset": {
+      "name": "GSM8K (matematiksel akıl yürütme)",
+      "detail": "7,5K eğitim / 1,3K test kelime problemi · HF: openai/gsm8k · <10 MB",
+      "url": "https://huggingface.co/datasets/openai/gsm8k"
+     },
+     "baseline": {
+      "name": "ReAct / sıfır-örnekli Tree-of-Thought (tek ajan)",
+      "code": "Standart CoT prompt + tek model koşusu (aynı taban modelle)",
+      "result": "Referans: tek-ajan CoT skoru kendi ortamınızda sabitlenir; debate literatürü tek ajana karşı tutarlı kazanç raporlar (Du ve ark., 2023)"
+     },
+     "target": "Aynı taban modelle tek-ajan accuracy üzerinde istatistiksel anlamlı kazanç",
+     "metric": "Accuracy (test, çoklu koşu ortalaması)",
+     "strategy": [
+      "Ajan GSM8K’yı indirir, ReAct/ToT baseline’ını koşar ve skoru kaydeder",
+      "3’lü mimari kurulur: Çözücü (Solver) + Eleştirmen (Critic) + Hakem (Judge)",
+      "Tartışma turu sayısı ve rol-prompt’ları ızgarası",
+      "Uzlaşı kuralı varyantları: çoğunluk oyu vs hakem kararı",
+      "Kurgusal hata (hallucination) oranının ayrı metrik olarak ölçümü"
+     ],
+     "gpu": "GPU düşük: API veya 1× RTX 4090/A10G’de Ollama/vLLM ile 7–8B (Mistral-7B / Llama-3-8B)",
+     "system": "Ubuntu 22.04 LTS · Python 3.10 · vLLM/Ollama veya LLM API",
+     "duration": "1–2 hafta (benchmark koşumu ~1–2 saat, paralel worker’a bağlı)",
+     "difficulty": 2,
+     "publishTarget": "Workshop / B-tier (agentic AI hattı güncel ve sıcak)",
+     "orchFit": "Çok yüksek"
+    },
+    {
+     "id": "agentic-2",
+     "code": "11.2",
+     "title": "Kapalı Döngü Öz-İyileştirme: HumanEval’de REPL Geri Beslemeli Kod Üretim Ajanı",
+     "titleEn": "Closed-Loop Self-Refinement: REPL-Feedback Code Generation Agent on HumanEval",
+     "dataset": {
+      "name": "HumanEval (kod üretimi/düzeltme)",
+      "detail": "164 el yazımı Python problemi · HF: openai/openai_humaneval · <1 MB",
+      "url": "https://huggingface.co/datasets/openai/openai_humaneval"
+     },
+     "baseline": {
+      "name": "Tek-pas kod üretimi (zero-shot)",
+      "code": "Aynı taban modelle tek denemelik üretim + unittest değerlendirmesi",
+      "result": "Referans: pass@1 skoru kendi ortamınızda sabitlenir (7–8B yerel modellerde ~%30–40 bandı)"
+     },
+     "target": "pass@1’de tek-pas baseline üzeri; hata döngüsü sayısı-kazanç eğrisi",
+     "metric": "pass@1 / pass@k",
+     "strategy": [
+      "Ajan HumanEval’i indirir, tek-pas baseline pass@1’i ölçer",
+      "Python REPL sandbox kapalı döngüsü: hata mesajı otomatik ajana geri iletilir",
+      "Maksimum düzeltme turu (k) taraması: 1 → 5",
+      "Eleştirmen ajanı eklenmesi vs saf hata-mesajı geri beslemesi ablasyonu",
+      "Hata sınıflandırması: syntax / runtime / mantık hatası oranları"
+     ],
+     "gpu": "GPU düşük: API veya yerel 7–8B (vLLM/Ollama) · sandbox CPU",
+     "system": "Ubuntu 22.04 LTS · Python 3.10 · izole REPL sandbox (docker veya nsjail önerilir)",
+     "duration": "1–2 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / B-tier",
+     "orchFit": "Çok yüksek"
+    }
+   ]
+  },
+  {
+   "id": "v3d",
+   "no": "12",
+   "name": "3B Görme & Uzamsal Yapay Zeka",
+   "short": "3DGS · Novel View Synthesis",
+   "color": "#6a7d2a",
+   "blurb": "3D Gaussian Splatting sahne başına ~20–60 dakikada eğitilir ve PSNR/SSIM/LPIPS otomatik raporlanır — orkestranın her N iterasyonda hiperparametre değiştirdiği “ajan yönlendirmeli adaptif eğitim” için ideal zemin. Düşük ışık senaryosu literatürde henüz doymamış bir açıdır.",
+   "topics": [
+    {
+     "id": "v3d-1",
+     "code": "12.1",
+     "title": "Düşük Işıklı Veri Setlerinde 3B Gauss Sıçratma Metriklerinin Ajan Yönlendirmeli Adaptif Öğrenme ile İyileştirilmesi",
+     "titleEn": "Agent-Guided Adaptive Learning for 3D Gaussian Splatting Metrics on Low-Light Datasets",
+     "dataset": {
+      "name": "Tanks and Temples (düşük ışık sahneleri) veya Mip-NeRF 360",
+      "detail": "Sahne başına birkaç yüz görüntü · COLMAP önişlemesi gerekir · resmi repodan iner",
+      "url": "https://github.com/graphdeco-inria/gaussian-splatting"
+     },
+     "baseline": {
+      "name": "Vanilla 3D Gaussian Splatting",
+      "code": "graphdeco-inria/gaussian-splatting (train.py + metrics.py tek komut)",
+      "result": "Mip-NeRF 360 ort. PSNR ~27,2 (resmi makale, 30k iter); düşük ışıkta belirgin düşüş"
+     },
+     "target": "Düşük ışık sahnelerinde PSNR/SSIM’de vanilla 3DGS üzeri",
+     "metric": "PSNR / SSIM / LPIPS",
+     "strategy": [
+      "Ajan veri setini indirir, vanilla 3DGS’yi koşar, metrics.py çıktısını kaydeder",
+      "Her N iterasyonda otonom öğrenme oranı ayarı (ajan-politika)",
+      "Densification (yoğunlaştırma) aralığı ve gradyan eşiği adaptasyonu",
+      "Kayıp ağırlıkları: L1 vs DSSIM dengesinin dinamik ayarı",
+      "Düşük ışık ön-işlemesi (pozlama düzeltme / gamma) ablasyonu"
+     ],
+     "gpu": "Tek 12–24GB (sahne başına ~20–60 dk) · Colab sınırda mümkün",
+     "system": "Ubuntu 22.04 · CUDA 12.1 · 3DGS conda ortamı + COLMAP (kurulum orta)",
+     "duration": "2–3 hafta",
+     "difficulty": 2,
+     "publishTarget": "Workshop / B-tier (3DGS hattı çok aktif)",
+     "orchFit": "Yüksek"
+    }
+   ]
+  }
+ ],
+ "bonus": [
+  {
+   "code": "B.1",
+   "name": "Anomali Tespiti",
+   "title": "Nokta-Ayarlama Eleştirisi: SMAP/MSL’de TranAD’ı Dürüst Metrikle Geçmek",
+   "dataset": "NASA SMAP / MSL (telemanom repodan otomatik iner) + SMD veya PSM — SWaT kaldırıldı (erişim form/NDA gerektirir, ajan programatik indiremez)",
+   "baseline": "TranAD (resmi repo) · beş veri setinde ort. F1 ~91 (SCAT tablosu)",
+   "note": "Point-adjust vs range-based F1 karşılaştırması ile değerlendirme dürüstlüğü katkısı; benchopt TSAD metrikleri. Orkestra uyumu: yüksek.",
+   "url": "https://github.com/benchopt/benchmark_tsad"
+  }
+ ]
+}
