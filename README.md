@@ -17,6 +17,26 @@ uygulamayı tek bir bilgisayarda/sunucuda çalıştırıp o makinenin adresini p
 streamlit run app.py --server.address 0.0.0.0
 ```
 
+## E-posta doğrulaması ve hesaplar (zorunlu kurulum)
+
+Öğrenciler klasik site girişi kullanır:
+
+- **Kayıt Ol:** Ad + `@ostimteknik.edu.tr` e-postası → mailine gelen 6 haneli kod →
+  şifre belirle. Hesap oluşur.
+- **Giriş Yap:** Sonraki girişlerde sadece e-posta + şifre yeterlidir (kod gerekmez).
+- **Şifremi Unuttum:** Mailine yeni kod gelir, kodu girip yeni şifre belirler.
+
+Şifreler veritabanında tuzlanmış PBKDF2 özeti olarak tutulur (düz metin asla saklanmaz).
+Kod 10 dakika geçerlidir, 5 hatalı denemede iptal olur, yeni kod için 60 sn bekleme vardır.
+
+Kodların gönderilebilmesi için SMTP ayarı gerekir:
+
+1. `.streamlit/secrets.toml.example` dosyasını `.streamlit/secrets.toml` olarak kopyalayın.
+2. İçine kendi SMTP bilgilerinizi yazın (Gmail için "Uygulama Şifresi" gerekir —
+   dosyanın içindeki yönergeleri izleyin).
+
+SMTP ayarlanmadan kayıt/sıfırlama kodu gönderilemez; uygulama bunu açık bir hata mesajıyla bildirir.
+
 ## Dosyalar
 
 | Dosya | Açıklama |
@@ -28,10 +48,12 @@ streamlit run app.py --server.address 0.0.0.0
 
 ## Kullanım
 
-**Öğrenci:** Sol menüden ad soyad + öğrenci numarasını girer → konuyu açıp
-"Bu konuyu seç" der → seçtiği konunun içinde ilerleme kutuları belirir:
-veri seti indirildi / rakip çalıştı / kod stabil / rakip geçildi.
-Konu değiştirirse ilerleme sıfırlanır.
+**Öğrenci:** İlk seferde "Kayıt Ol" sekmesinden ad soyad + okul e-postası
+(`@ostimteknik.edu.tr`) ile doğrulama kodu alıp şifresini belirler → sonraki
+girişlerde "Giriş Yap" ile e-posta + şifre yeterlidir → konuyu açıp "Bu konuyu seç"
+der → seçtiği konunun içinde her adımı radyo butonuyla işaretler:
+beklemede / tamamlandı / gerçekleştirilemiyor (sorununu yazar, danışman panelden
+cevaplar). Bir konu yalnızca bir öğrenciye aittir. Konu değiştirirse ilerleme sıfırlanır.
 
 **Danışman:** Sol menüden "Danışman Paneli" → şifre (varsayılan: `orkestra2026`,
 değiştirmek için `app.py` içindeki `PANEL_SIFRESI` satırını düzenleyin).
