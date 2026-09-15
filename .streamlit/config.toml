@@ -6,5 +6,11 @@ secondaryBackgroundColor = "#101022"
 textColor = "#d7f9ff"
 font = "sans serif"
 
+# Streamlit Cloud'da onboarding sorusunda takılıp sunucunun hiç baslamamasini
+# (healthz connection refused) onlemek icin headless acik olmali.
+# Yerelde de bu ayarla calisir; tarayiciyi kendin ac: http://localhost:8501
 [server]
-headless = false
+headless = true
+
+[browser]
+gatherUsageStats = false
