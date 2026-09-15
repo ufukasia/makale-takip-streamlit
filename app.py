@@ -871,7 +871,8 @@ def student_view():
         diffs = st.multiselect("Zorluk", ["Kolay", "Orta", "İleri"])
         fits = st.multiselect("Orkestra uyumu", ["Çok yüksek", "Yüksek", "Orta"])
         filters_on = bool(q or only_free or diffs or fits)
-        st.caption("Bir dala tıklayınca diğer dallar kapanır; filtreler tüm dallarda çalışır.")
+        st.caption("Dallar kapalı gelir; bir dal açıkken başkasına tıklarsan önceki "
+                   "kapanır. Filtre aktifken eşleşen dallar kendiliğinden açılır.")
 
     def topic_matches(t):
         if only_free and t["id"] in taken and (
@@ -891,28 +892,25 @@ def student_view():
 
     with mcol:
         branch = st.session_state.get("branch")
-        if branch:
-            if st.button("← Tüm dallara dön", key="branch_back"):
-                st.session_state.pop("branch")
-                st.rerun()
         for cat in CATEGORIES:
             topics = [t for t in cat["topics"] if topic_matches(t)]
+            if filters_on and not topics:
+                continue
             dolu_n = sum(1 for t in cat["topics"] if t["id"] in taken)
-            open_branch = branch is None or branch == cat["no"]
-            if branch and not open_branch:
-                # kapalı dal: kompakt satır
+            # kapalıyken: akordeon — birini açınca diğerleri kapalı kalır;
+            # filtre aktifken eşleşme olan dallar otomatik açılır
+            is_open = (branch == cat["no"]) or (filters_on and branch is None)
+            if not is_open:
                 if st.button(f"▶ {cat['no']} · {cat['name']} — "
-                             f"{len(cat['topics'])} konu · {dolu_n} dolu",
+                             f"{len(topics)}/{len(cat['topics'])} konu · {dolu_n} dolu",
                              key=f"br_{cat['no']}", use_container_width=True):
                     st.session_state["branch"] = cat["no"]
                     st.rerun()
                 continue
-            if filters_on and not topics:
-                continue
             if st.button(f"▼ {cat['no']} · {cat['name']} — "
                          f"{len(topics)}/{len(cat['topics'])} konu · {dolu_n} dolu",
                          key=f"br_{cat['no']}", use_container_width=True):
-                st.session_state["branch"] = cat["no"] if branch is None else None
+                st.session_state.pop("branch", None)
                 st.rerun()
             st.caption(f"{cat['short']} — {cat['blurb']}")
             for t in topics:
