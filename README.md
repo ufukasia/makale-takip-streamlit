@@ -17,6 +17,55 @@ uygulamayı tek bir bilgisayarda/sunucuda çalıştırıp o makinenin adresini p
 streamlit run app.py --server.address 0.0.0.0
 ```
 
+## Kalıcı veritabanı — Turso (Streamlit Cloud için zorunlu)
+
+**Sorun:** Streamlit Cloud'un diski geçicidir. Uygulama bir süre kullanılmayınca
+makine uykuya dalar; uyandığında repo sıfırdan kurulur ve `submissions.db` ilk
+haline döner — öğrencilerin konu seçimleri ve ilerlemeleri kaybolur.
+
+**Çözüm:** Kayıtları Turso'da (ücretsiz, SQLite uyumlu bulut veritabanı) tutmak.
+Kod tarafında değişiklik gerekmez; `secrets.toml` içinde `[turso]` varsa uygulama
+otomatik olarak buluta yazar, yoksa yerel dosyaya düşer.
+
+### Adımlar (5 dakika, kredi kartı istemez)
+
+1. <https://turso.tech> → **GitHub ile giriş yap**.
+2. **Create Database** → isim ver (ör. `makale-takip`), bölge: Frankfurt (`fra`).
+3. Veritabanına tıkla → **Connect / Connection URL** → `libsql://...` adresini kopyala.
+4. Aynı ekrandan **Create Token** → çıkan uzun metni kopyala.
+5. `.streamlit/secrets.toml` dosyana şunu ekle:
+
+   ```toml
+   [turso]
+   url = "libsql://makale-takip-kullaniciadin.turso.io"
+   auth_token = "eyJhbGciOiJF..."
+   ```
+
+6. Tabloları kur ve **yereldeki mevcut kayıtları buluta taşı**:
+
+   ```bash
+   python turso_kur.py
+   ```
+
+   Sadece bağlantıyı denemek için: `python turso_kur.py --kontrol`
+
+7. **Streamlit Cloud tarafı:** uygulamanın sayfasında sağ üst **⋮ → Settings →
+   Secrets** kutusuna aynı `[turso]` bloğunu (ve `[smtp]` bloğunu) yapıştır → Save.
+   Uygulama yeniden başlar.
+
+8. Doğrula: Danışman Paneli → en altta **Veri saklama** kutusu
+   **"✅ Kalıcı mod (Turso)"** yazmalı. "⚠ Geçici mod" yazıyorsa secrets okunmamıştır.
+
+Artık makine uyuyup uyansa, uygulamayı yeniden deploy etsen bile kayıtlar yerinde kalır.
+
+### Yedekleme
+
+Danışman Paneli → **Veri saklama** bölümünde:
+
+- **💾 Yedek indir (.json)** — tüm öğrenci kayıtları, adım durumları ve hesaplar.
+- **♻ Yedekten geri yükle** — indirilen dosyayı geri yükler (aynı anahtardaki
+  kayıtların üzerine yazar). Yereldeki verileri buluta taşımanın ikinci yolu budur.
+
 ## E-posta doğrulaması ve hesaplar (zorunlu kurulum)
 
 Öğrenciler klasik site girişi kullanır:
@@ -42,9 +91,11 @@ SMTP ayarlanmadan kayıt/sıfırlama kodu gönderilemez; uygulama bunu açık bi
 | Dosya | Açıklama |
 |---|---|
 | `app.py` | Tüm uygulama (öğrenci görünümü + danışman paneli) |
+| `turso_db.py` | Turso bulut veritabanı için küçük HTTP istemcisi (ek paket gerektirmez) |
+| `turso_kur.py` | Turso tablolarını kurar ve yerel kayıtları buluta taşır |
 | `topics.json` | 14 bölüm / 58 konu + bonus havuzu (dashboard ile aynı veri) |
-| `requirements.txt` | Tek bağımlılık: streamlit |
-| `submissions.db` | Çalışınca otomatik oluşur — öğrenci kayıtları (SQLite) |
+| `requirements.txt` | Bağımlılıklar: streamlit, requests |
+| `submissions.db` | Yerel yedek depo — `[turso]` tanımlı değilse burası kullanılır |
 
 ## Kullanım
 
@@ -62,5 +113,11 @@ Panelde: aşama sayaçları, öğrenci tablosu, konu başına seçim grafiği ve
 
 ## Notlar
 
-- Veriler `submissions.db` dosyasında saklanır; yedeklemek için bu dosyayı kopyalayın.
-- Sıfırlamak için uygulamayı durdurup `submissions.db` dosyasını silin.
+- `[turso]` tanımlıysa veriler bulutta, değilse `submissions.db` dosyasında saklanır.
+  Hangisinin geçerli olduğunu Danışman Paneli → **Veri saklama** kutusundan görebilirsiniz.
+- Yedek almak için panelden **💾 Yedek indir (.json)** (veya yerelde `submissions.db`
+  dosyasını kopyalayın).
+- Sıfırlamak için: yerelde `submissions.db` dosyasını silin; Turso'da ise
+  <https://turso.tech> panelinden veritabanını silip yeniden oluşturun.
+- Turso'nun ücretsiz planı bu ders için fazlasıyla yeterlidir (milyarlarca satır
+  okuma / 9 GB depolama).

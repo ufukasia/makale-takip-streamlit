@@ -10,8 +10,12 @@ Yüksek Lisans Yapay Zeka Dersi — Makale Konu Seçim & İlerleme Takip (Stream
   kayıt olur ve şifre belirler; sonraki girişlerde e-posta + şifre yeterlidir.
   Şifresini unutursa yine mail koduyla sıfırlayabilir.
 - Danışman: yan menüden "Danışman Paneli"ni açar (panel şifresi aşağıda).
-- Tüm kayıtlar bu klasördeki submissions.db (SQLite) dosyasında tutulur.
-  Aynı sunucuda çalışan tek uygulama olduğu için herkes aynı veriyi görür.
+- Kayıtlar, .streamlit/secrets.toml içinde [turso] tanımlıysa Turso'daki
+  (SQLite uyumlu) kalıcı bulut veritabanında tutulur. Streamlit Cloud'un diski
+  geçicidir: makine uykuya dalıp yeniden kurulduğunda yerel submissions.db
+  sıfırlanır, bulut veritabanı ise olduğu gibi kalır. [turso] yoksa uygulama
+  yerel submissions.db dosyasına düşer (yalnızca kendi bilgisayarında kalıcı).
+  Kurulum adımları için README.md'ye bak.
 
 E-posta gönderimi için .streamlit/secrets.toml dosyasına SMTP bilgilerini ekleyin
 (örnek: .streamlit/secrets.toml.example). SMTP ayarlanmadan kod gönderilemez.
@@ -30,6 +34,8 @@ from email.message import EmailMessage
 from pathlib import Path
 
 import streamlit as st
+
+from turso_db import Turso, TursoError
 
 BASE = Path(__file__).parent
 DB_PATH = BASE / "submissions.db"
@@ -481,42 +487,107 @@ def load_topics():
         return json.load(f)
 
 
+SCHEMA = [
+    """CREATE TABLE IF NOT EXISTS submissions (
+        student_no   TEXT PRIMARY KEY,
+        student_name TEXT NOT NULL,
+        topic_id     TEXT NOT NULL,
+        topic_code   TEXT NOT NULL,
+        topic_title  TEXT NOT NULL,
+        dataset_downloaded INTEGER NOT NULL DEFAULT 0,
+        baseline_ran       INTEGER NOT NULL DEFAULT 0,
+        code_stable        INTEGER NOT NULL DEFAULT 0,
+        beat_baseline      INTEGER NOT NULL DEFAULT 0,
+        updated_at   TEXT NOT NULL
+    )""",
+    """CREATE TABLE IF NOT EXISTS step_feedback (
+        student_no    TEXT NOT NULL,
+        step          TEXT NOT NULL,
+        status        INTEGER NOT NULL DEFAULT 0,
+        student_note  TEXT NOT NULL DEFAULT '',
+        advisor_reply TEXT NOT NULL DEFAULT '',
+        updated_at    TEXT NOT NULL,
+        PRIMARY KEY (student_no, step)
+    )""",
+    """CREATE TABLE IF NOT EXISTS accounts (
+        email      TEXT PRIMARY KEY,
+        name       TEXT NOT NULL,
+        salt       TEXT NOT NULL,
+        pw_hash    TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )""",
+]
+
+
+class _Rows:
+    """sqlite3 cursor benzeri: fetchone/fetchall."""
+
+    def __init__(self, rows):
+        self._rows = [tuple(r) for r in rows]
+
+    def fetchone(self):
+        return self._rows[0] if self._rows else None
+
+    def fetchall(self):
+        return self._rows
+
+
+class _TursoConn:
+    """sqlite3.Connection benzeri sarmalayici (her sorgu autocommit)."""
+
+    def __init__(self, client):
+        self._client = client
+
+    def execute(self, sql, params=()):
+        return _Rows(self._client.execute(sql, tuple(params)))
+
+    def commit(self):
+        pass
+
+    def close(self):
+        pass
+
+
+@st.cache_resource(show_spinner=False)
+def _turso_client():
+    """secrets'ta [turso] varsa kalici bulut veritabanina baglanir; yoksa None.
+
+    Streamlit Cloud'un diski gecici oldugu icin makine uyuyup uyandiginda yerel
+    submissions.db sifirlanir. [turso] tanimliysa tum kayitlar bulutta durur ve
+    uygulama yeniden kurulsa bile ogrenci secimleri yerinde kalir.
+    """
+    try:
+        cfg = dict(st.secrets["turso"])
+    except Exception:
+        return None
+    url = str(cfg.get("url", "")).strip()
+    if not url:
+        return None
+    token = str(cfg.get("auth_token") or cfg.get("token") or "").strip()
+    client = Turso(url, token)
+    client.batch([(ddl, ()) for ddl in SCHEMA])   # tablolari bir kez hazirla
+    return client
+
+
+def db_is_cloud() -> bool:
+    """Veriler kalici bulut veritabaninda mi tutuluyor?"""
+    try:
+        return _turso_client() is not None
+    except TursoError:
+        raise
+    except Exception:
+        return False
+
+
 def conn():
+    """Turso ayarliysa kalici bulut DB (uyku sonrasi veriler korunur),
+    degilse yerel SQLite dosyasi (yalnizca kendi bilgisayarinda kalicidir)."""
+    client = _turso_client()
+    if client is not None:
+        return _TursoConn(client)
     c = sqlite3.connect(DB_PATH)
-    c.execute(
-        """CREATE TABLE IF NOT EXISTS submissions (
-            student_no   TEXT PRIMARY KEY,
-            student_name TEXT NOT NULL,
-            topic_id     TEXT NOT NULL,
-            topic_code   TEXT NOT NULL,
-            topic_title  TEXT NOT NULL,
-            dataset_downloaded INTEGER NOT NULL DEFAULT 0,
-            baseline_ran       INTEGER NOT NULL DEFAULT 0,
-            code_stable        INTEGER NOT NULL DEFAULT 0,
-            beat_baseline      INTEGER NOT NULL DEFAULT 0,
-            updated_at   TEXT NOT NULL
-        )"""
-    )
-    c.execute(
-        """CREATE TABLE IF NOT EXISTS step_feedback (
-            student_no    TEXT NOT NULL,
-            step          TEXT NOT NULL,
-            status        INTEGER NOT NULL DEFAULT 0,
-            student_note  TEXT NOT NULL DEFAULT '',
-            advisor_reply TEXT NOT NULL DEFAULT '',
-            updated_at    TEXT NOT NULL,
-            PRIMARY KEY (student_no, step)
-        )"""
-    )
-    c.execute(
-        """CREATE TABLE IF NOT EXISTS accounts (
-            email      TEXT PRIMARY KEY,
-            name       TEXT NOT NULL,
-            salt       TEXT NOT NULL,
-            pw_hash    TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )"""
-    )
+    for ddl in SCHEMA:
+        c.execute(ddl)
     return c
 
 
@@ -690,6 +761,50 @@ def db_taken_topics():
     rows = c.execute("SELECT topic_id, student_no, student_name FROM submissions").fetchall()
     c.close()
     return {tid: {"student_no": sno, "student_name": sname} for tid, sno, sname in rows}
+
+
+# ── Yedekleme: tum tablolari JSON'a alip geri yukleme ──
+# Turso'ya gecmeden once yereldeki kayitlari disari alip panelden geri
+# yukleyebilmek (ve her ihtimale karsi elde bir kopya bulundurmak) icin.
+BACKUP_TABLES = {
+    "submissions": ["student_no", "student_name", "topic_id", "topic_code",
+                    "topic_title", "dataset_downloaded", "baseline_ran",
+                    "code_stable", "beat_baseline", "updated_at"],
+    "step_feedback": ["student_no", "step", "status", "student_note",
+                      "advisor_reply", "updated_at"],
+    "accounts": ["email", "name", "salt", "pw_hash", "created_at"],
+}
+
+
+def db_export_all() -> dict:
+    """Tum tablolari tek bir sozlukte toplar (yedek dosyasi icin)."""
+    c = conn()
+    data = {"_exported_at": datetime.now().isoformat(timespec="seconds"),
+            "_source": "turso" if isinstance(c, _TursoConn) else "local"}
+    for table, cols in BACKUP_TABLES.items():
+        rows = c.execute(f"SELECT {', '.join(cols)} FROM {table}").fetchall()
+        data[table] = [dict(zip(cols, r)) for r in rows]
+    c.close()
+    return data
+
+
+def db_import_all(data: dict) -> dict:
+    """Yedegi geri yukler; ayni anahtara sahip kayitlarin uzerine yazar."""
+    c = conn()
+    counts = {}
+    for table, cols in BACKUP_TABLES.items():
+        rows = data.get(table) or []
+        placeholders = ",".join("?" * len(cols))
+        for row in rows:
+            c.execute(
+                f"INSERT OR REPLACE INTO {table} ({', '.join(cols)}) "
+                f"VALUES ({placeholders})",
+                tuple(row.get(col) for col in cols),
+            )
+        counts[table] = len(rows)
+    c.commit()
+    c.close()
+    return counts
 
 
 DATA = load_topics()
@@ -931,6 +1046,52 @@ def student_view():
 
 
 # ───────────────────────── Danışman paneli ─────────────────────────
+def render_storage_box():
+    """Verinin nerede durduğunu gösterir + yedek al / geri yükle."""
+    st.subheader("Veri saklama")
+    try:
+        cloud, err = db_is_cloud(), None
+    except TursoError as exc:
+        cloud, err = False, str(exc)
+
+    if err:
+        st.error(f"Turso'ya bağlanılamadı: {err}")
+    elif cloud:
+        st.success("✅ **Kalıcı mod (Turso).** Kayıtlar bulut veritabanında tutuluyor; "
+                   "Streamlit uyuyup uyansa da, uygulama yeniden kurulsa da silinmez.")
+    else:
+        st.warning(
+            "⚠ **Geçici mod (yerel dosya).** Streamlit Cloud'un diski geçicidir: "
+            "makine uykuya dalıp yeniden kurulduğunda `submissions.db` sıfırlanır "
+            "ve öğrenci seçimleri kaybolur. Kalıcı hale getirmek için "
+            "`secrets.toml` içine `[turso]` bilgilerini ekle (adımlar README'de)."
+        )
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        try:
+            dump = json.dumps(db_export_all(), ensure_ascii=False, indent=1)
+            st.download_button(
+                "💾 Yedek indir (.json)", dump,
+                file_name=f"yedek-{datetime.now():%Y%m%d-%H%M}.json",
+                mime="application/json",
+                help="Tüm öğrenci kayıtları, adım durumları ve hesaplar.")
+        except Exception as exc:
+            st.error(f"Yedek alınamadı: {exc}")
+    with col_b:
+        up = st.file_uploader("♻ Yedekten geri yükle (.json)", type="json",
+                              key="restore_file")
+        if up is not None and st.button("Yedeği yükle", type="primary"):
+            try:
+                counts = db_import_all(json.loads(up.getvalue().decode("utf-8")))
+            except Exception as exc:
+                st.error(f"Yedek yüklenemedi: {exc}")
+            else:
+                st.success("Yüklendi — " + ", ".join(
+                    f"{k}: {v} kayıt" for k, v in counts.items()))
+                st.rerun()
+
+
 def panel_view():
     st.markdown(
         '<div class="neon-title">SINIF DURUMU</div>'
@@ -1022,6 +1183,8 @@ def panel_view():
         lines.append("")
     st.download_button("📄 Raporu indir (.txt)", "\n".join(lines),
                        file_name="sinif-durum-raporu.txt")
+
+    render_storage_box()
 
 
 # ───────────────────────── Kimlik doğrulama formları ─────────────────────────
@@ -1154,14 +1317,22 @@ with st.sidebar:
                     _register_form()
                 else:
                     _reset_form()
-        st.caption("Kayıtlar bu sunucudaki veritabanında (submissions.db) tutulur; "
-                   "danışmanın panelden anlık görür.")
+        try:
+            kalici = db_is_cloud()
+        except TursoError:
+            kalici = False
+        st.caption(
+            ("Kayıtlar kalıcı bulut veritabanında tutulur; danışmanın panelden "
+             "anlık görür.") if kalici else
+            ("Kayıtlar sunucudaki geçici dosyada (submissions.db) tutulur; "
+             "danışmanın panelden anlık görür.")
+        )
 
-if mode.startswith("📋"):
-    student_view()
-else:
-    ok = st.session_state.get("panel_ok", False)
-    if not ok:
+def _route():
+    if mode.startswith("📋"):
+        student_view()
+        return
+    if not st.session_state.get("panel_ok", False):
         pw = st.sidebar.text_input("Panel şifresi", type="password")
         if st.sidebar.button("Panele gir"):
             if pw == PANEL_SIFRESI:
@@ -1170,8 +1341,23 @@ else:
             else:
                 st.sidebar.error("Yanlış şifre.")
         st.info("Bu panel şifre korumalıdır. Şifreyi danışmanından al.")
-    else:
-        if st.sidebar.button("Panelden çık"):
-            st.session_state["panel_ok"] = False
-            st.rerun()
-        panel_view()
+        return
+    if st.sidebar.button("Panelden çık"):
+        st.session_state["panel_ok"] = False
+        st.rerun()
+    panel_view()
+
+
+try:
+    _route()
+except TursoError as exc:
+    # Bulut veritabanina ulasilamadi. Sessizce yerel dosyaya DÜŞMÜYORUZ: o dosya
+    # Streamlit Cloud'da geçicidir, oraya yazılan kayıtlar yine kaybolurdu.
+    st.error(
+        "🔌 **Veritabanına şu anda ulaşılamıyor.** Kayıtların kaybolmaması için "
+        "uygulama geçici depoya yazmayı reddetti. Birkaç dakika sonra tekrar dene; "
+        "sürerse danışmanına haber ver."
+    )
+    st.caption(f"Teknik ayrıntı: {exc}")
+    if st.button("🔄 Tekrar dene"):
+        st.rerun()
