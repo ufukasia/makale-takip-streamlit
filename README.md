@@ -1,6 +1,6 @@
 # Makale Konu Seçim & İlerleme Takip — Streamlit Uygulaması
 
-Yüksek lisans yapay zeka dersi için öğrenci konu seçimi ve 5 aşamalı ilerleme takibi.
+Yüksek lisans yapay zeka dersi için öğrenci konu seçimi ve 6 aşamalı ilerleme takibi (son aşama: makale yazıldı).
 
 ## Kurulum ve çalıştırma
 

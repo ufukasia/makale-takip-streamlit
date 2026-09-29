@@ -58,11 +58,13 @@ STEPS = [
     ("baseline", "Rakip (baseline) çalıştı", "Otoriter yöntem koşuldu, referans sonuç kaydedildi"),
     ("stable", "Kod stabil çalışıyor", "Deney döngüsü hatasız, tekrarlanabilir çalışıyor"),
     ("beat", "Rakip geçildi", "Manipüle edilmiş yöntem baseline'ı geçti (çoklu seed)"),
+    ("paper", "Makale yazıldı", "Sonuçlar makale formatında yazıldı, danışmana teslim edildi"),
 ]
 
-STEP_KEYS = ["dataset", "baseline", "stable", "beat"]
+STEP_KEYS = ["dataset", "baseline", "stable", "beat", "paper"]
 STEP_FIELD = {"dataset": "dataset_downloaded", "baseline": "baseline_ran",
-              "stable": "code_stable", "beat": "beat_baseline"}
+              "stable": "code_stable", "beat": "beat_baseline",
+              "paper": "paper_written"}
 # adım durumları: 0 beklemede · 1 tamamlandı · 2 gerçekleştirilemiyor (sorun)
 STATUS_OPTS = ["Beklemede", "Tamamlandı ✓", "Gerçekleştirilemiyor ⚠"]
 
@@ -330,10 +332,9 @@ st.markdown(NEON_CSS, unsafe_allow_html=True)
 
 
 def render_progress_flow(rec, fb=None):
-    """5 aşamalı neon kablolama ilerleme akışını çizer (sorunlu adımlar kırmızı)."""
+    """Aşamalı neon kablolama ilerleme akışını çizer (sorunlu adımlar kırmızı)."""
     fb = fb or {}
-    done = [True, bool(rec["dataset_downloaded"]), bool(rec["baseline_ran"]),
-            bool(rec["code_stable"]), bool(rec["beat_baseline"])]
+    done = [True] + [bool(rec[STEP_FIELD[k]]) for k in STEP_KEYS]
     blocked = [False] + [fb.get(k, {}).get("status") == 2 for k in STEP_KEYS]
     next_idx = next((i for i in range(len(done))
                      if not done[i] and not blocked[i]), None)
@@ -388,10 +389,9 @@ def render_specs(topic):
 
 
 def mini_flow_html(rec, fb=None) -> str:
-    """Panel satırı için 5 düğümlü mini neon kablo akışı (HTML döner)."""
+    """Panel satırı için mini neon kablo akışı (HTML döner)."""
     fb = fb or {}
-    done = [True, bool(rec["dataset_downloaded"]), bool(rec["baseline_ran"]),
-            bool(rec["code_stable"]), bool(rec["beat_baseline"])]
+    done = [True] + [bool(rec[STEP_FIELD[k]]) for k in STEP_KEYS]
     blocked = [False] + [fb.get(k, {}).get("status") == 2 for k in STEP_KEYS]
     next_idx = next((i for i in range(len(done))
                      if not done[i] and not blocked[i]), None)
@@ -498,6 +498,7 @@ SCHEMA = [
         baseline_ran       INTEGER NOT NULL DEFAULT 0,
         code_stable        INTEGER NOT NULL DEFAULT 0,
         beat_baseline      INTEGER NOT NULL DEFAULT 0,
+        paper_written      INTEGER NOT NULL DEFAULT 0,
         updated_at   TEXT NOT NULL
     )""",
     """CREATE TABLE IF NOT EXISTS step_feedback (
@@ -517,6 +518,22 @@ SCHEMA = [
         created_at TEXT NOT NULL
     )""",
 ]
+
+
+# Sonradan eklenen sutunlar: CREATE TABLE IF NOT EXISTS var olan tabloya
+# dokunmadigi icin (Turso'daki canli tablo dahil) bunlar ALTER ile eklenir.
+ADDED_COLUMNS = {
+    "submissions": [("paper_written", "INTEGER NOT NULL DEFAULT 0")],
+}
+
+
+def _migrate(execute):
+    """execute(sql) -> satirlar. Eksik sutunlari ekler, mevcut veriye dokunmaz."""
+    for table, cols in ADDED_COLUMNS.items():
+        have = {r[1] for r in execute(f"PRAGMA table_info({table})")}
+        for name, ddl in cols:
+            if name not in have:
+                execute(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")
 
 
 class _Rows:
@@ -553,6 +570,7 @@ def _turso_connect(url: str, token: str):
     """Ayni url/token icin tek bir istemci; tablolari bir kez hazirlar."""
     client = Turso(url, token)
     client.batch([(ddl, ()) for ddl in SCHEMA])
+    _migrate(client.execute)
     return client
 
 
@@ -596,6 +614,7 @@ def conn():
     c = sqlite3.connect(DB_PATH)
     for ddl in SCHEMA:
         c.execute(ddl)
+    _migrate(lambda sql: c.execute(sql).fetchall())
     return c
 
 
@@ -603,7 +622,8 @@ def db_get(student_no: str):
     c = conn()
     row = c.execute(
         "SELECT student_no, student_name, topic_id, topic_code, topic_title, "
-        "dataset_downloaded, baseline_ran, code_stable, beat_baseline, updated_at "
+        "dataset_downloaded, baseline_ran, code_stable, beat_baseline, paper_written, "
+        "updated_at "
         "FROM submissions WHERE student_no = ?",
         (student_no,),
     ).fetchone()
@@ -611,7 +631,8 @@ def db_get(student_no: str):
     if not row:
         return None
     keys = ["student_no", "student_name", "topic_id", "topic_code", "topic_title",
-            "dataset_downloaded", "baseline_ran", "code_stable", "beat_baseline", "updated_at"]
+            "dataset_downloaded", "baseline_ran", "code_stable", "beat_baseline",
+            "paper_written", "updated_at"]
     return dict(zip(keys, row))
 
 
@@ -627,13 +648,15 @@ def db_register(student_no, name, topic):
     c.execute(
         """INSERT INTO submissions
            (student_no, student_name, topic_id, topic_code, topic_title,
-            dataset_downloaded, baseline_ran, code_stable, beat_baseline, updated_at)
-           VALUES (?,?,?,?,?,0,0,0,0,?)
+            dataset_downloaded, baseline_ran, code_stable, beat_baseline,
+            paper_written, updated_at)
+           VALUES (?,?,?,?,?,0,0,0,0,0,?)
            ON CONFLICT(student_no) DO UPDATE SET
              student_name=excluded.student_name,
              topic_id=excluded.topic_id, topic_code=excluded.topic_code,
              topic_title=excluded.topic_title,
              dataset_downloaded=0, baseline_ran=0, code_stable=0, beat_baseline=0,
+             paper_written=0,
              updated_at=excluded.updated_at""",
         (student_no, name, topic["id"], topic["code"], topic["title"],
          datetime.now().isoformat(timespec="seconds")),
@@ -711,12 +734,14 @@ def db_all():
     c = conn()
     rows = c.execute(
         "SELECT student_no, student_name, topic_id, topic_code, topic_title, "
-        "dataset_downloaded, baseline_ran, code_stable, beat_baseline, updated_at "
+        "dataset_downloaded, baseline_ran, code_stable, beat_baseline, paper_written, "
+        "updated_at "
         "FROM submissions ORDER BY updated_at DESC"
     ).fetchall()
     c.close()
     keys = ["student_no", "student_name", "topic_id", "topic_code", "topic_title",
-            "dataset_downloaded", "baseline_ran", "code_stable", "beat_baseline", "updated_at"]
+            "dataset_downloaded", "baseline_ran", "code_stable", "beat_baseline",
+            "paper_written", "updated_at"]
     return [dict(zip(keys, r)) for r in rows]
 
 
@@ -777,7 +802,7 @@ def db_taken_topics():
 BACKUP_TABLES = {
     "submissions": ["student_no", "student_name", "topic_id", "topic_code",
                     "topic_title", "dataset_downloaded", "baseline_ran",
-                    "code_stable", "beat_baseline", "updated_at"],
+                    "code_stable", "beat_baseline", "paper_written", "updated_at"],
     "step_feedback": ["student_no", "step", "status", "student_note",
                       "advisor_reply", "updated_at"],
     "accounts": ["email", "name", "salt", "pw_hash", "created_at"],
@@ -802,12 +827,12 @@ def db_import_all(data: dict) -> dict:
     counts = {}
     for table, cols in BACKUP_TABLES.items():
         rows = data.get(table) or []
-        placeholders = ",".join("?" * len(cols))
         for row in rows:
+            present = [col for col in cols if col in row]   # eski yedeklerde yeni sutun yok
             c.execute(
-                f"INSERT OR REPLACE INTO {table} ({', '.join(cols)}) "
-                f"VALUES ({placeholders})",
-                tuple(row.get(col) for col in cols),
+                f"INSERT OR REPLACE INTO {table} ({', '.join(present)}) "
+                f"VALUES ({','.join('?' * len(present))})",
+                tuple(row[col] for col in present),
             )
         counts[table] = len(rows)
     c.commit()
@@ -966,7 +991,7 @@ def student_view():
     k1.metric("Kalan konu", total - dolu)          # north star
     k2.metric("Toplam konu", total)
     k3.metric("Seçilmiş", dolu)
-    k4.metric("İlerlemen", f"{steps_done}/5" if my_record else "—")
+    k4.metric("İlerlemen", f"{steps_done}/{len(STEPS)}" if my_record else "—")
     k5.metric("Sorun bildirimin", my_issues if my_record else "—")
 
     if my_record:
@@ -1107,15 +1132,16 @@ def panel_view():
         '<hr class="neon-rule">',
         unsafe_allow_html=True,
     )
-    st.caption("Her satır bir öğrenci: seçtiği konu ve beş aşamalı ilerlemesi.")
+    st.caption(f"Her satır bir öğrenci: seçtiği konu ve {len(STEPS)} aşamalı ilerlemesi.")
 
     rows = db_all()
-    m1, m2, m3, m4, m5 = st.columns(5)
+    m1, m2, m3, m4, m5, m6 = st.columns(6)
     m1.metric("Konu seçti", len(rows))
     m2.metric("Dataset indi", sum(r["dataset_downloaded"] for r in rows))
     m3.metric("Rakip çalıştı", sum(r["baseline_ran"] for r in rows))
     m4.metric("Kod stabil", sum(r["code_stable"] for r in rows))
     m5.metric("Rakip geçildi", sum(r["beat_baseline"] for r in rows))
+    m6.metric("Makale yazıldı", sum(r["paper_written"] for r in rows))
 
     if st.button("🔄 Yenile"):
         st.rerun()
@@ -1144,7 +1170,7 @@ def panel_view():
         c[4].caption(datetime.fromisoformat(r["updated_at"]).strftime("%d/%m %H:%M"))
     st.markdown(
         '<div class="mlegend">Düğümler soldan sağa: Konu seçildi · Veri seti · '
-        'Rakip çalıştı · Kod stabil · Rakip geçildi — dolu hat = tamamlanan aşama, '
+        'Rakip çalıştı · Kod stabil · Rakip geçildi · Makale yazıldı — dolu hat = tamamlanan aşama, '
         'magenta pulse = sıradaki adım, kırmızı pulse = sorun bildirildi.</div>',
         unsafe_allow_html=True,
     )
@@ -1182,9 +1208,7 @@ def panel_view():
     st.subheader("Dışa aktar")
     lines = ["AI DERSİ — SINIF DURUM RAPORU", "=" * 50, ""]
     for r in rows:
-        durum = [s[1] for s in STEPS[1:] if r[{
-            "dataset": "dataset_downloaded", "baseline": "baseline_ran",
-            "stable": "code_stable", "beat": "beat_baseline"}[s[0]]]]
+        durum = [s[1] for s in STEPS[1:] if r[STEP_FIELD[s[0]]]]
         lines.append(f"{r['student_name']} ({r['student_no']}) — "
                      f"[{r['topic_code']}] {r['topic_title']}")
         lines.append(f"   İlerleme: konu seçildi" + (", " + ", ".join(durum) if durum else ""))

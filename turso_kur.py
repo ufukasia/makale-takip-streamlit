@@ -37,6 +37,7 @@ SCHEMA = [
         baseline_ran       INTEGER NOT NULL DEFAULT 0,
         code_stable        INTEGER NOT NULL DEFAULT 0,
         beat_baseline      INTEGER NOT NULL DEFAULT 0,
+        paper_written      INTEGER NOT NULL DEFAULT 0,
         updated_at   TEXT NOT NULL
     )""",
     """CREATE TABLE IF NOT EXISTS step_feedback (
@@ -60,11 +61,26 @@ SCHEMA = [
 TABLES = {
     "submissions": ["student_no", "student_name", "topic_id", "topic_code",
                     "topic_title", "dataset_downloaded", "baseline_ran",
-                    "code_stable", "beat_baseline", "updated_at"],
+                    "code_stable", "beat_baseline", "paper_written", "updated_at"],
     "step_feedback": ["student_no", "step", "status", "student_note",
                       "advisor_reply", "updated_at"],
     "accounts": ["email", "name", "salt", "pw_hash", "created_at"],
 }
+
+
+# Sonradan eklenen sutunlar (app.py'deki ADDED_COLUMNS ile ayni olmali).
+ADDED_COLUMNS = {
+    "submissions": [("paper_written", "INTEGER NOT NULL DEFAULT 0")],
+}
+
+
+def migrate(execute):
+    """Var olan tablolara eksik sutunlari ekler; veriye dokunmaz."""
+    for table, cols in ADDED_COLUMNS.items():
+        have = {r[1] for r in execute(f"PRAGMA table_info({table})")}
+        for name, ddl in cols:
+            if name not in have:
+                execute(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")
 
 
 def read_turso_secrets():
@@ -90,6 +106,10 @@ def local_rows():
         print(f"! Yerel veritabani yok ({DB_PATH.name}) — sadece tablolar kurulacak.")
         return {}
     c = sqlite3.connect(DB_PATH)
+    try:
+        migrate(lambda sql: c.execute(sql).fetchall())
+    except sqlite3.OperationalError:
+        pass                                # tablo yerelde hic yok
     data = {}
     for table, cols in TABLES.items():
         try:
@@ -116,6 +136,7 @@ def main():
     print("✓ Baglanti kuruldu.")
 
     db.batch([(ddl, ()) for ddl in SCHEMA])
+    migrate(db.execute)
     print("✓ Tablolar hazir.")
 
     if not args.kontrol:
