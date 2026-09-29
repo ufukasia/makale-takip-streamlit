@@ -549,12 +549,22 @@ class _TursoConn:
 
 
 @st.cache_resource(show_spinner=False)
+def _turso_connect(url: str, token: str):
+    """Ayni url/token icin tek bir istemci; tablolari bir kez hazirlar."""
+    client = Turso(url, token)
+    client.batch([(ddl, ()) for ddl in SCHEMA])
+    return client
+
+
 def _turso_client():
     """secrets'ta [turso] varsa kalici bulut veritabanina baglanir; yoksa None.
 
     Streamlit Cloud'un diski gecici oldugu icin makine uyuyup uyandiginda yerel
     submissions.db sifirlanir. [turso] tanimliysa tum kayitlar bulutta durur ve
     uygulama yeniden kurulsa bile ogrenci secimleri yerinde kalir.
+
+    Secrets her cagrida okunur, yalnizca baglanti onbelleklenir: boylece
+    [turso] sonradan eklenirse/degisirse "yok" sonucu onbellekte takili kalmaz.
     """
     try:
         cfg = dict(st.secrets["turso"])
@@ -564,9 +574,7 @@ def _turso_client():
     if not url:
         return None
     token = str(cfg.get("auth_token") or cfg.get("token") or "").strip()
-    client = Turso(url, token)
-    client.batch([(ddl, ()) for ddl in SCHEMA])   # tablolari bir kez hazirla
-    return client
+    return _turso_connect(url, token)
 
 
 def db_is_cloud() -> bool:
